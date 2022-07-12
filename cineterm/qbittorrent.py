@@ -9,17 +9,17 @@ import time
 
 console = Console()
 
-def launch_qbittorrent() -> None:
+def launch_qbittorrent(logfile_path: str) -> None:
     """Launch qbittorrent in a new thread if not already running."""
     if "qbittorrent" not in (i.name() for i in psutil.process_iter()):
         subprocess.Popen(["qbittorrent"],
                          stdout=open("/dev/null", 'w'),
-                         stderr=open("../logfile.log", 'a'),
+                         stderr=open(logfile_path, 'a'),
                          preexec_fn=os.setpgrp)  # Separate process from main thread
 
-def login(qb_username: str, qb_password: str) -> RequestsCookieJar:
+def login(qb_username: str, qb_password: str, logfile_path: str) -> RequestsCookieJar:
     """Launch qbittorrent if not running and get login cookies."""
-    launch_qbittorrent()
+    launch_qbittorrent(logfile_path)
     time.sleep(2)  # Sleep to allow enough time for qbittorrent to launch
     assert "qbittorrent" in (i.name() for i in psutil.process_iter()), \
         "qbittorrent not launched! Make sure it is installed!"
@@ -68,7 +68,9 @@ if __name__ == "__main__":
         credentials = json.load(f)
     qb_username = credentials["qb_username"]
     qb_password = credentials["qb_password"]
-    login_cookies = login(qb_username, qb_password)
+    login_cookies = login(logfile_path="../logfile.log",
+                          qb_username=qb_username,
+                          qb_password=qb_password)
     console.print(list_torrents(login_cookies))
 
     # example_magnet_link = "magnet:?xt=urn:btih:FDB569EC7F853672103FB82EA79F5FAB20247591&dn=https://yts.mx/torrent/download/FDB569EC7F853672103FB82EA79F5FAB20247591&tr=udp://open.demonii.com:1337/announce&tr=udp://tracker.openbittorrent.com:80&tr=udp://tracker.coppersurfer.tk:6969&tr=udp://glotorrents.pw:6969/announce&tr=udp://tracker.opentrackr.org:1337/announce&tr=udp://torrent.gresille.org:80/announce&tr=udp://p4p.arenabg.com:1337&tr=udp://tracker.leechers-paradise.org:6969"

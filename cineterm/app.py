@@ -1,3 +1,11 @@
+import os
+import sys
+lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cineterm"))
+root_path = os.path.dirname(lib_path)
+logfile_path = root_path + "/logfile.log"
+print(root_path)
+sys.path.append(lib_path)
+
 import yts
 import qbittorrent as qb
 import json
@@ -9,7 +17,6 @@ from rich.table import Table
 from rich.align import Align
 from rich.progress import Progress
 import subprocess
-import os
 import time
 import requests
 from fuzzywuzzy import process
@@ -29,9 +36,11 @@ from fuzzywuzzy import fuzz
 # TODO: Add install.sh
 #
 
+
+
 console = Console()
 
-with open("../credentials.json", 'r') as f:
+with open(f"{root_path}/credentials.json", 'r') as f:
     credentials = json.load(f)
 
 # qbittorrent details
@@ -85,7 +94,7 @@ def populate_results_table(search_results: list[dict]) -> Table:
     return results_table
 
 
-def main(check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
+def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
     if not check_connection():
         console.print("[red]Error:[/red] Internet is not connected!")
         return None
@@ -97,7 +106,7 @@ def main(check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
             print("Connecting to vpn...")
             subprocess.run(["expressvpn", "connect"],
                            stdout=open("/dev/null", 'w'),
-                           stderr=open("../logfile.log", 'a'))
+                           stderr=open(logfile_path, 'a'))
             console.print("[green]Success:[/green] connected to expressvpn!")
         except:
             console.print("[red]Warning:[/red] expressvpn failed to connect!")
@@ -157,10 +166,6 @@ def main(check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
             trailer_url = "https://www.youtube.com/watch?v=" + search_results[movie_idx]["yt_trailer_code"]
 
             subprocess.run(["mpv", trailer_url])
-            # subprocess.Popen(["mpv", trailer_url],
-            #                  stdout=open('/dev/null', 'w'),
-            #                  stderr=open('mpv.log', 'a'),
-            #                  preexec_fn=os.setpgrp)  # Separate process from main thread
         
         elif mode_choice == 'S':
             movie_idx = IntPrompt.ask(f"Choose a movie number to summarize [0-{len(search_results)-1}]",
@@ -209,8 +214,9 @@ def main(check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
 
             magnet_link = yts.parse_magnet_link(torrent_hash, torrent_url)
 
-            login_cookies = qb.login(qb_username, qb_password)
-            download_dir = "/home/isaac/Videos/Films/"
+            login_cookies = qb.login(logfile_path=logfile_path,
+                                     qb_username=qb_username,
+                                     qb_password=qb_password)
 
             qb.add_torrent(magnet_link=magnet_link,
                            movie_title=movie_title,
@@ -260,4 +266,4 @@ def main(check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
 
 
 if __name__ == "__main__":
-    main(check_for_expressvpn=True, buffer_percent=0.1)
+    main(download_dir = "/home/isaac/Videos/Films/", check_for_expressvpn=True, buffer_percent=0.1)
