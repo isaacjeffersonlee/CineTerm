@@ -13,8 +13,8 @@ def launch_qbittorrent() -> None:
     """Launch qbittorrent in a new thread if not already running."""
     if "qbittorrent" not in (i.name() for i in psutil.process_iter()):
         subprocess.Popen(["qbittorrent"],
-                         stdout=open('/dev/null', 'w'),
-                         stderr=open('logfile.log', 'a'),
+                         stdout=open("/dev/null", 'w'),
+                         stderr=open("../logfile.log", 'a'),
                          preexec_fn=os.setpgrp)  # Separate process from main thread
 
 def login(qb_username: str, qb_password: str) -> RequestsCookieJar:
@@ -64,7 +64,7 @@ def get_torrent_progress(torrent_hash: str, login_cookies: RequestsCookieJar) ->
     return {"downloaded": 0, "amount_left": 0, "size": 0}  # If we fail to get torrent data
 
 if __name__ == "__main__":
-    with open('credentials.json', 'r') as f:
+    with open("../credentials.json", 'r') as f:
         credentials = json.load(f)
     qb_username = credentials["qb_username"]
     qb_password = credentials["qb_password"]
