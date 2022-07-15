@@ -3,7 +3,6 @@ import sys
 lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cineterm"))
 root_path = os.path.dirname(lib_path)
 logfile_path = root_path + "/logfile.log"
-print(root_path)
 sys.path.append(lib_path)
 
 import yts
@@ -23,31 +22,32 @@ from fuzzywuzzy import process
 from fuzzywuzzy import fuzz
 import vlc
 
+# Todo List
+# TODO: Refactor
+# - More separation of concerns
+# - Docstrings
+# - Cleaner dir structure
+# TODO: Add fuzzy searching
+# TODO: Add recommendation system
+# TODO: Add option to delete torrent when mpv is closed
+# TODO: Add more error checking
+# TODO: Upload to git
+# - Nice README.md 
+# - .gitignore
+# TODO: Add install.sh
+
+# Rich setup for pretty printing
+status_spinner = "dots"
+console = Console()
+
 play_sounds = True
 try:
     start_sound = vlc.MediaPlayer(f"{root_path}/media/start_sound.mp3")
     error_sound = vlc.MediaPlayer(f"{root_path}/media/error_sound.mp3")
     torrent_added_sound = vlc.MediaPlayer(f"{root_path}/media/yeah_boy.mp3")
+    prof_sound = vlc.MediaPlayer(f"{root_path}/media/watch_your_profanity.mp3")
 except:
     play_sounds = False
-
-# Todo List
-# Add sound effects
-# TODO: Add option to delete torrent when mpv is closed
-# TODO: Add more error checking
-# TODO: Refactor
-# - More separation of concerns
-# - Docstrings
-# - Cleaner dir structure
-# TODO: Upload to git
-# - Nice README.md 
-# - .gitignore
-# TODO: Add install.sh
-#
-
-
-
-console = Console()
 
 with open(f"{root_path}/credentials.json", 'r') as f:
     credentials = json.load(f)
@@ -125,6 +125,7 @@ large_torrent_str = """
 """
 
 def dynamic_print(small_str: str, medium_str: str, large_str: str) -> None:
+    """Print small_str, medium_str or large_str depending on terminal width."""
     term_width = os.get_terminal_size().columns
     if term_width > 100:
         console.print(Panel(Align(renderable=large_str, align="center")))
@@ -133,8 +134,27 @@ def dynamic_print(small_str: str, medium_str: str, large_str: str) -> None:
     else:
         console.print(Markdown(f"# {small_str}"))
 
+def request_search_results(prompt_str: str, endpoint: str="list_movies.json") -> dict:
+    """Prompt the user for search query and send a request to yts."""
+    search_query = Prompt.ask(f" [yellow]{prompt_str}[/yellow]")
+    naughty_words = ["fuck", "shit", "ass"]
+    for naughty_word in naughty_words:
+        if naughty_word in search_query.lower():
+            console.print("[red]WaTcH YoUr PRoFaNItY![/red]")
+            if play_sounds: 
+                prof_sound.stop()  # Make sure not already playing
+                prof_sound.play()
+            break
+
+    with console.status("Getting search results...", spinner=status_spinner):
+        r = yts.yts_request(endpoint=endpoint,
+                            params={"query_term": search_query})
+
+    return r
+
 
 def check_connection(timeout: int=1) -> bool:
+    """Ping google to check internet connection."""
     try:
         requests.head("http://www.google.com/", timeout=timeout)
         return True
@@ -144,6 +164,7 @@ def check_connection(timeout: int=1) -> bool:
 
 
 def populate_results_table(search_results: list[dict]) -> Table:
+    """Populate a rich table using search_results."""
     results_table = Table(title=None, show_lines=False)
     results_table.add_column("", justify="left", style="cyan")
     results_table.add_column("Title", justify="left", style="white")
@@ -155,24 +176,31 @@ def populate_results_table(search_results: list[dict]) -> Table:
     return results_table
 
 
+def connect_expressvpn(check_for_expressvpn: bool) -> None:
+    """Activate expressvpn connection if check_for_expressvpn is set to True."""
+    if check_for_expressvpn:
+        try:
+            with console.status("Connecting to expressvpn...", spinner=status_spinner):
+                subprocess.run(["expressvpn", "connect"],
+                               stdout=open("/dev/null", 'w'),
+                               stderr=open(logfile_path, 'a'))
+            console.print("[green]Success:[/green] connected to expressvpn!")
+        except:
+            console.print("[red]Warning:[/red] expressvpn failed to connect!")
+
+
 def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
-    if not check_connection():
+    with console.status("Checking internet connection...", spinner=status_spinner):
+        connected = check_connection()
+
+    if not connected:
         console.print("[red]Error:[/red] Internet is not connected!")
         if play_sounds: error_sound.play()
         return None
 
     os.system("clear")
 
-    if check_for_expressvpn:
-        try:
-            print("Connecting to vpn...")
-            subprocess.run(["expressvpn", "connect"],
-                           stdout=open("/dev/null", 'w'),
-                           stderr=open(logfile_path, 'a'))
-            console.print("[green]Success:[/green] connected to expressvpn!")
-        except:
-            console.print("[red]Warning:[/red] expressvpn failed to connect!")
-
+    connect_expressvpn(check_for_expressvpn)
     dynamic_print(small_str="CineTerm", medium_str=medium_title_str, large_str=large_title_str)
 
     try:
@@ -182,9 +210,7 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
         if play_sounds: error_sound.play()
 
     console.print(Markdown("---"))
-    search_query = Prompt.ask(" [yellow]Enter movie to search[/yellow]")
-    r = yts.yts_request(endpoint="list_movies.json",
-                        params={"query_term": search_query})
+    r = request_search_results("Enter movie to search")
     while True:
         os.system("clear")
         status = r["status"]
@@ -195,21 +221,17 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
             console.print(f"[red]Status:[/red] {status}")
             console.print(f"[red]:[/red] {r['status_message']}")
             console.print(Markdown("---"))
-            search_query = Prompt.ask(" [yellow]Retry search[/yellow]")
-            r = yts.yts_request(endpoint="list_movies.json",
-                                         params={"query_term": search_query})
+            r = request_search_results("Retry search")
             continue
 
-        try:
-            search_results = r["data"]["movies"]
-        except KeyError:
-            console.print(f"[red]Failed:[/red] Unable to find results for {search_query}")
+        if r["data"]["movie_count"] == 0:
+            console.print(f"[red]Failed:[/red] No results found!")
             if play_sounds: error_sound.play()
             console.print(Markdown("---"))
-            search_query = Prompt.ask(" [yellow]Retry search[/yellow]")
-            r = yts.yts_request(endpoint="list_movies.json",
-                                         params={"query_term": search_query})
+            r = request_search_results("Retry search")
             continue
+
+        search_results = r["data"]["movies"]
 
         results_table = populate_results_table(search_results)
 
@@ -224,9 +246,7 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
 
         elif mode_choice == 'r':
             console.print(Markdown("---"))
-            search_query = Prompt.ask(" [yellow]Search again[/yellow]")
-            r = yts.yts_request(endpoint="list_movies.json",
-                                params={"query_term": search_query})
+            r = request_search_results("Search again")
             continue
 
         elif mode_choice == 't':
@@ -235,10 +255,9 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
                                       choices=[str(i) for i in range(len(search_results))])
 
             movie_title = search_results[movie_idx]["title_long"]
+            console.print("[yellow]Caution:[/yellow] sometimes this will open a random youtube video if the trailer is [red]not found[/red].")
             console.print(f"Opening trailer for {movie_title}...")
-            console.print("[yellow]Caution:[/yellow] sometimes this will open a random youtube video if the trailer is not found.")
             trailer_url = "https://www.youtube.com/watch?v=" + search_results[movie_idx]["yt_trailer_code"]
-
             subprocess.run(["mpv", trailer_url])
         
         elif mode_choice == 'S':
@@ -300,21 +319,18 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
 
             magnet_link = yts.parse_magnet_link(torrent_hash, torrent_url)
 
-            login_cookies = qb.login(logfile_path=logfile_path,
-                                     qb_username=qb_username,
-                                     qb_password=qb_password)
+            with console.status(f"Connecting to qbittorrent...", spinner=status_spinner):
+                login_cookies = qb.login(logfile_path=logfile_path,
+                                         qb_username=qb_username,
+                                         qb_password=qb_password)
 
-            qb.add_torrent(magnet_link=magnet_link,
-                           movie_title=movie_title,
-                           save_path=download_dir,
-                           login_cookies=login_cookies)
+            with console.status(f"Adding torrent to qbittorrent..."):
+                qb.add_torrent(magnet_link=magnet_link,
+                               movie_title=movie_title,
+                               save_path=download_dir,
+                               login_cookies=login_cookies)
 
             console.print(" [green]Added torrent![/green]")
-            # subprocess.run(["espeak", "-v",
-            #                 speech_language,
-            #                 "You'll be pleased to hear that I've just added the torrent for yoos!"],
-            #                stdout=open("/dev/null", 'w'),
-            #                stderr=open(logfile_path, 'a'))
 
             if mode_choice == 's':  # Open the torrent in mpv
                 try:
@@ -361,4 +377,4 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
 
 
 if __name__ == "__main__":
-    main(download_dir = "/home/isaac/Videos/Films/", check_for_expressvpn=True, buffer_percent=0.1)
+    main(download_dir="/home/isaac/Videos/Films/", check_for_expressvpn=True, buffer_percent=0.1)
