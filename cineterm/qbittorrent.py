@@ -7,10 +7,9 @@ import os
 import subprocess
 import time
 
-console = Console()
 
 def launch_qbittorrent(logfile_path: str) -> None:
-    """Launch qbittorrent in a new thread if not already running."""
+    """Launch qbittorrent in a new process if not already running."""
     if "qbittorrent" not in (i.name() for i in psutil.process_iter()):
         subprocess.Popen(["qbittorrent"],
                          stdout=open("/dev/null", 'w'),
@@ -31,6 +30,7 @@ def login(qb_username: str, qb_password: str, logfile_path: str) -> RequestsCook
 
 
 def add_torrent(magnet_link: str, movie_title: str, save_path: str, login_cookies: RequestsCookieJar) -> None:
+    """Add torrent and begin leeching torrent with qbittorrent."""
     data={
         "urls": magnet_link,
         "savepath": save_path,
@@ -47,6 +47,7 @@ def add_torrent(magnet_link: str, movie_title: str, save_path: str, login_cookie
 
 
 def list_torrents(login_cookies: RequestsCookieJar) -> dict:
+    """List all currently active torrents in qbittorrent."""
     r = requests.get(url="http://localhost:8080/api/v2/torrents/info",
                       cookies=login_cookies) 
     assert r.status_code == 200, f"Failed to add torrent!"
@@ -64,6 +65,7 @@ def get_torrent_progress(torrent_hash: str, login_cookies: RequestsCookieJar) ->
     return {"downloaded": 0, "amount_left": 0, "size": 0}  # If we fail to get torrent data
 
 if __name__ == "__main__":
+    console = Console()
     with open("../credentials.json", 'r') as f:
         credentials = json.load(f)
     qb_username = credentials["qb_username"]
