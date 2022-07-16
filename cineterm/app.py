@@ -1,18 +1,7 @@
-import os
-import sys
-lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cineterm"))
-root_path = os.path.dirname(lib_path)
-logfile_path = root_path + "/logfile.log"
-sys.path.append(lib_path)
-cache_path = f"{lib_path}/cache/yts_movies_df.pkl"
-
-import yts
-import qbittorrent as qb
-import selector
 import json
 import pandas as pd
 from rich.console import Console  # For pretty printing
-from rich.prompt import IntPrompt, Prompt
+from rich.prompt import IntPrompt, Prompt, Confirm
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
@@ -24,6 +13,19 @@ import requests
 from fuzzywuzzy import process
 from fuzzywuzzy import fuzz
 import vlc
+import os
+import sys
+lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cineterm"))
+root_path = os.path.dirname(lib_path)
+logfile_path = root_path + "/logfile.log"
+sys.path.append(lib_path)
+cache_path = f"{lib_path}/cache/yts_movies_df.pkl"
+
+import yts
+import qbittorrent as qb
+import selector
+import title
+
 
 # Todo List
 # TODO: Refactor
@@ -62,53 +64,8 @@ qb_password = credentials["qb_password"]
 # For text to speech
 speech_language = "en-uk-wmids"
 
-# For ascii text generation
-# https://www.texttool.com/ascii-font#p=display&f=Delta%20Corps%20Priest%201&t=ACTIONS
-# ANSI Shadow
-medium_title_str = """
- ██████╗██╗███╗   ██╗███████╗████████╗███████╗██████╗ ███╗   ███╗
-██╔════╝██║████╗  ██║██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║
-██║     ██║██╔██╗ ██║█████╗     ██║   █████╗  ██████╔╝██╔████╔██║
-██║     ██║██║╚██╗██║██╔══╝     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║
-╚██████╗██║██║ ╚████║███████╗   ██║   ███████╗██║  ██║██║ ╚═╝ ██║
- ╚═════╝╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝
-"""
-
-# Delta Coprs Priest 1
-large_title_str = """
- ▄████████  ▄█  ███▄▄▄▄      ▄████████     ███        ▄████████    ▄████████   ▄▄▄▄███▄▄▄▄   
-███    ███ ███  ███▀▀▀██▄   ███    ███ ▀█████████▄   ███    ███   ███    ███ ▄██▀▀▀███▀▀▀██▄ 
-███    █▀  ███▌ ███   ███   ███    █▀     ▀███▀▀██   ███    █▀    ███    ███ ███   ███   ███ 
-███        ███▌ ███   ███  ▄███▄▄▄         ███   ▀  ▄███▄▄▄      ▄███▄▄▄▄██▀ ███   ███   ███ 
-███        ███▌ ███   ███ ▀▀███▀▀▀         ███     ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   ███   ███   ███ 
-███    █▄  ███  ███   ███   ███    █▄      ███       ███    █▄  ▀███████████ ███   ███   ███ 
-███    ███ ███  ███   ███   ███    ███     ███       ███    ███   ███    ███ ███   ███   ███ 
-████████▀  █▀    ▀█   █▀    ██████████    ▄████▀     ██████████   ███    ███  ▀█   ███   █▀  
-                                                                  ███    ███         
-"""
 
 
-medium_actions_str = """
- █████╗  ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
-██╔══██╗██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
-███████║██║        ██║   ██║██║   ██║██╔██╗ ██║███████╗
-██╔══██║██║        ██║   ██║██║   ██║██║╚██╗██║╚════██║
-██║  ██║╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
-╚═╝  ╚═╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
-"""
-
-
-large_actions_str = """
-   ▄████████  ▄████████     ███      ▄█   ▄██████▄  ███▄▄▄▄      ▄████████ 
-  ███    ███ ███    ███ ▀█████████▄ ███  ███    ███ ███▀▀▀██▄   ███    ███ 
-  ███    ███ ███    █▀     ▀███▀▀██ ███▌ ███    ███ ███   ███   ███    █▀  
-  ███    ███ ███            ███   ▀ ███▌ ███    ███ ███   ███   ███        
-▀███████████ ███            ███     ███▌ ███    ███ ███   ███ ▀███████████ 
-  ███    ███ ███    █▄      ███     ███  ███    ███ ███   ███          ███ 
-  ███    ███ ███    ███     ███     ███  ███    ███ ███   ███    ▄█    ███ 
-  ███    █▀  ████████▀     ▄████▀   █▀    ▀██████▀   ▀█   █▀   ▄████████▀  
-                                                                           
-"""
 
 medium_torrent_str = """
 ████████╗ ██████╗ ██████╗ ██████╗ ███████╗███╗   ██╗████████╗
@@ -130,27 +87,6 @@ large_torrent_str = """
    ▄████▀    ▀██████▀    ███    ███   ███    ███   ██████████  ▀█   █▀     ▄████▀    ▄████████▀  
                          ███    ███   ███    ███                                                
 """
-
-def dynamic_print(small_str: str, medium_str: str, large_str: str) -> None:
-    """Print small_str, medium_str or large_str depending on terminal width."""
-    term_width = os.get_terminal_size().columns
-    if term_width > 100:
-        console.print(Panel(Align(renderable=large_str, align="center")))
-    elif 60 < term_width and term_width < 100:
-        console.print(Panel(Align(renderable=medium_str, align="center")))
-    else:
-        console.print(Markdown(f"# {small_str}"))
-
-def fzf_request_movie(yts_movies_df: pd.DataFrame) -> dict:
-    """Fuzzy prompt the user for search query and send a request to yts."""
-    movie_id = selector.fzf_get_movie_id(yts_movies_df)
-    if movie_id != -1:  # Use -1 instead of 0 encase 0 is a valid movie id
-        with console.status("Requesting search...", spinner=status_spinner):
-            r = yts.yts_request(endpoint="movie_details.json",
-                                params={"movie_id": movie_id})
-        return r
-    else:  # If we exit
-        return {}
 
 
 
@@ -205,29 +141,27 @@ def main(download_dir: str, check_for_expressvpn: bool,
 
     if check_for_expressvpn: connect_expressvpn()
 
-    dynamic_print(small_str="CineTerm", medium_str=medium_title_str, large_str=large_title_str)
-
-
-    with console.status("Reading in movie database..."):
+    if play_sounds:
         try:
-            yts_movies_df = pd.read_pickle(cache_path)
-        except FileNotFoundError:
-            print("Cache file not found!")
-            yts.update_database(cache_path)
-            yts_movies_df = pd.read_pickle(cache_path)
+            start_sound.play()
+        except:
+            console.print("[gray]Error playing start sound effect![/gray]")
+            error_sound.play()
 
-    input("Press any key to begin search: ")
+    yts_movies_df = yts.read_in_movies_df(cache_path)
 
-    try:
-        if play_sounds: start_sound.play()
-    except:
-        console.print("[gray]Error playing start sound effect![/gray]")
-        if play_sounds: error_sound.play()
+    title.display_live_title()
+
 
     console.print(Markdown("---"))
-    r = fzf_request_movie(yts_movies_df)
+
+    os.system("clear")
+    r = selector.fzf_request_movie(yts_movies_df, console)
+
     while True:
         os.system("clear")
+        if not r:  # If the user exists the initial fuzzy search.
+            break
         status = r["status"]
         if status == "ok":
             console.print(f"[green]Status:[/green] {status}")
@@ -236,7 +170,7 @@ def main(download_dir: str, check_for_expressvpn: bool,
             console.print(f"[red]Status:[/red] {status}")
             console.print(f"[red]:[/red] {r['status_message']}")
             console.print(Markdown("---"))
-            r = fzf_request_movie(yts_movies_df)
+            r = selector.fzf_request_movie(yts_movies_df, console)
             continue
 
         movie = r["data"]["movie"]
@@ -244,10 +178,26 @@ def main(download_dir: str, check_for_expressvpn: bool,
 
         # results_table = populate_results_table(movie)
 
-        dynamic_print(small_str="Results", medium_str=medium_actions_str, large_str=large_actions_str)
+        # dynamic_print(small_str="ACTIONS", medium_str=medium_actions_str, large_str=large_actions_str)
+        console.print(Markdown(f"## {movie_title}:"))
+        print("")
+        summary = movie["description_intro"]
+        genres = movie["genres"]
+        if not summary or summary == ' ':
+            summary = "[red]Sorry![/red] No summary available."
+
+        console.print(Align(renderable=Panel(renderable=summary, width=50), align="center"))
+        print("")
+        console.print(Align(renderable=f"Rating: {movie['rating']}/10.0", align="center"))
+        print("")
+        console.print(Align(renderable="Genres: " + " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
+                            align="center"))
+        print("")
         console.print(Markdown("---"))
+        print("")
         # console.print(Align(results_table, align="center"))
-        mode_choice = Prompt.ask(" ([red]s[/red])tream ([red]d[/red])ownload ([red]r[/red])e-search ([red]S[/red])ummary ([red]t[/red])railer ([red]q[/red])uit",
+        console.print(Align(renderable=" ([red bold]s[/red bold])tream ([red bold]d[/red bold])ownload ([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak ([red bold]t[/red bold])railer ([red bold]q[/red bold])uit", align="center"))
+        mode_choice = Prompt.ask(" [yellow]Enter action letter[/yellow]",
                                  show_choices=False,
                                  choices=['d', 'r', 's', 'S', 't', 'q']) 
         if mode_choice == 'q':
@@ -255,7 +205,7 @@ def main(download_dir: str, check_for_expressvpn: bool,
 
         elif mode_choice == 'r':
             console.print(Markdown("---"))
-            r = fzf_request_movie(yts_movies_df)
+            r = selector.fzf_request_movie(yts_movies_df, console)
             continue
 
         elif mode_choice == 't':
@@ -286,13 +236,14 @@ def main(download_dir: str, check_for_expressvpn: bool,
                     pass
     
             print("")
-            return_input = input("Press any key to return to main menu: ")
+            os.system("clear")
             continue
         
         else:  # Either stream or download
             os.system("clear")
             console.print(f"You have chosen: {movie_title}")
-            dynamic_print(small_str="Torrents", medium_str=medium_torrent_str, large_str=large_torrent_str)
+            torrent_title_str = title.get_title_str(small_str="Torrents", medium_str=medium_torrent_str, large_str=large_torrent_str)
+            console.print(Panel(Align(renderable=torrent_title_str, align="center")))
             torrents = movie["torrents"]
             for idx, torrent in enumerate(torrents):
                 panel_str = ""
@@ -326,11 +277,13 @@ def main(download_dir: str, check_for_expressvpn: bool,
             console.print(" [green]Added torrent![/green]")
 
             if mode_choice == 's':  # Open the torrent in mpv
-                try:
-                    if play_sounds: torrent_added_sound.play()
-                except:
-                    console.print("[gray]Error playing sound effect.[/gray]")
-                    if play_sounds: error_sound.play()
+                delete_after_viewing = Confirm.ask(" [yellow]Delete torrent files after viewing?[/yellow]")
+                if play_sounds:
+                    try:
+                        torrent_added_sound.play()
+                    except:
+                        console.print("[gray]Error playing sound effect.[/gray]")
+                        error_sound.play()
                 # console.print(f"Total torrent bytes: {torrent_size_bytes}")
                 download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
 
@@ -348,7 +301,7 @@ def main(download_dir: str, check_for_expressvpn: bool,
                                     total=buffer_percent*download_info["size"])
 
                     # We only wait for 10% completion before opening the file.
-                    while download_info["downloaded"] / download_info["size"] < buffer_percent:
+                    while download_info["availability"] != -1 and download_info["downloaded"] / download_info["size"] < buffer_percent:
                         download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
                         progress.update(buffer_task, completed=download_info["downloaded"])
                         time.sleep(0.5)
@@ -363,6 +316,38 @@ def main(download_dir: str, check_for_expressvpn: bool,
                         console.print(f" [green]Opening:[/green][white]{torrent_dir + file}[/white] in mpv.")
                         subprocess.run(["mpv", torrent_dir + file])
                         break
+
+
+                if not delete_after_viewing:  # Wait for the torrent to finish downloading
+                    with Progress() as progress:
+                        buffer_task = progress.add_task(description="Checking on torrent...", total=None)
+
+                        while not download_info["size"]:  # Wait until torrent has started downloading
+                            time.sleep(0.5)
+                            download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
+                        
+                        # Update total size once torrent starts downloading
+                        progress.update(task_id=buffer_task,
+                                        description=f" [green]Downloading to 100%...[/green]",
+                                        completed=download_info["downloaded"],
+                                        total=download_info["size"])
+
+                        # We only wait for 10% completion before opening the file.
+                        while download_info["availability"] != -1:  # While we are not seeding
+                            download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
+                            progress.update(buffer_task, completed=download_info["downloaded"])
+                            time.sleep(0.5)
+
+
+                with console.status("[cyan bold]qbittorrent:[/cyan bold] Removing torrent..."):
+                    qb.remove_torrent(torrent_hash=torrent_hash, delete_files=delete_after_viewing, login_cookies=login_cookies)
+
+                console.print("[green]Seeding[/green] / [red]Leeching[/red] stopped!")
+                console.print(f"Files{' ' if delete_after_viewing else ' [green]not[/green] '}deleted!")
+
+            print("")
+            console.print("[red]❤[/red] [cyan]Goodbye![/cyan] [red]❤[/red]")
+            print("")
             break
 
 
