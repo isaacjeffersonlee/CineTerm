@@ -31,7 +31,7 @@ def login(qb_username: str, qb_password: str, logfile_path: str) -> RequestsCook
 
 def add_torrent(magnet_link: str, movie_title: str, save_path: str, login_cookies: RequestsCookieJar) -> None:
     """Add torrent and begin leeching torrent with qbittorrent."""
-    data={
+    data = {
         "urls": magnet_link,
         "savepath": save_path,
         "paused": "false",
@@ -44,6 +44,19 @@ def add_torrent(magnet_link: str, movie_title: str, save_path: str, login_cookie
                       data=data,
                       cookies=login_cookies) 
     assert r.status_code == 200, f"Failed to add torrent!"
+
+
+def remove_torrent(torrent_hash: str, delete_files: bool, login_cookies: RequestsCookieJar) -> None:
+    """Remove a torrent and optionally delete files."""
+    torrent_hash = torrent_hash.lower()
+    data = {
+        "hashes" : torrent_hash,
+        "deleteFiles" : "true" if delete_files else "false"
+    }
+    r = requests.post(url="http://localhost:8080/api/v2/torrents/delete",
+                      data=data,
+                      cookies=login_cookies) 
+    assert r.status_code == 200, f"Failed to remove torrent!"
 
 
 def list_torrents(login_cookies: RequestsCookieJar) -> dict:
@@ -60,7 +73,8 @@ def get_torrent_progress(torrent_hash: str, login_cookies: RequestsCookieJar) ->
         if torrent["hash"] == torrent_hash:
             return {"downloaded": torrent["downloaded"],
                     "amount_left": torrent["amount_left"],
-                    "size": torrent["size"]}
+                    "size": torrent["size"],
+                    "availability": torrent["availability"]}
 
     return {"downloaded": 0, "amount_left": 0, "size": 0}  # If we fail to get torrent data
 
@@ -74,7 +88,8 @@ if __name__ == "__main__":
                           qb_username=qb_username,
                           qb_password=qb_password)
     console.print(list_torrents(login_cookies))
-
+    # test_hash = "0365534D94E4D8412511C32FE0D288C0BEA8C911"
+    # remove_torrent(torrent_hash=test_hash, delete_files=True, login_cookies=login_cookies)
     # example_magnet_link = "magnet:?xt=urn:btih:FDB569EC7F853672103FB82EA79F5FAB20247591&dn=https://yts.mx/torrent/download/FDB569EC7F853672103FB82EA79F5FAB20247591&tr=udp://open.demonii.com:1337/announce&tr=udp://tracker.openbittorrent.com:80&tr=udp://tracker.coppersurfer.tk:6969&tr=udp://glotorrents.pw:6969/announce&tr=udp://tracker.opentrackr.org:1337/announce&tr=udp://torrent.gresille.org:80/announce&tr=udp://p4p.arenabg.com:1337&tr=udp://tracker.leechers-paradise.org:6969"
     # add_torrent(magnet_link=example_magnet_link,
     #             movie_title="Predator (1987)",
