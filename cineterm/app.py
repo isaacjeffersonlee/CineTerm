@@ -4,10 +4,13 @@ lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cineterm"
 root_path = os.path.dirname(lib_path)
 logfile_path = root_path + "/logfile.log"
 sys.path.append(lib_path)
+cache_path = f"{lib_path}/cache/yts_movies_df.pkl"
 
 import yts
 import qbittorrent as qb
+import selector
 import json
+import pandas as pd
 from rich.console import Console  # For pretty printing
 from rich.prompt import IntPrompt, Prompt
 from rich.markdown import Markdown
@@ -134,23 +137,18 @@ def dynamic_print(small_str: str, medium_str: str, large_str: str) -> None:
     else:
         console.print(Markdown(f"# {small_str}"))
 
-def request_search_results(prompt_str: str, endpoint: str="list_movies.json") -> dict:
-    """Prompt the user for search query and send a request to yts."""
-    search_query = Prompt.ask(f" [yellow]{prompt_str}[/yellow]")
-    naughty_words = ["fuck", "shit", "ass"]
-    for naughty_word in naughty_words:
-        if naughty_word in search_query.lower():
-            console.print("[red]WaTcH YoUr PRoFaNItY![/red]")
-            if play_sounds: 
-                prof_sound.stop()  # Make sure not already playing
-                prof_sound.play()
-            break
+def fzf_request_movie(yts_movies_df: pd.DataFrame) -> dict:
+    """Fuzzy prompt the user for search query and send a request to yts."""
+    movie_id = selector.fzf_get_movie_id(yts_movies_df)
+    if movie_id != -1:  # Use -1 instead of 0 encase 0 is a valid movie id
+        with console.status("Requesting search...", spinner=status_spinner):
+            r = yts.yts_request(endpoint="movie_details.json",
+                                params={"movie_id": movie_id})
+        return r
+    else:  # If we exit
+        return {}
 
-    with console.status("Getting search results...", spinner=status_spinner):
-        r = yts.yts_request(endpoint=endpoint,
-                            params={"query_term": search_query})
 
-    return r
 
 
 def check_connection(timeout: int=1) -> bool:
@@ -189,7 +187,8 @@ def connect_expressvpn(check_for_expressvpn: bool) -> None:
             console.print("[red]Warning:[/red] expressvpn failed to connect!")
 
 
-def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.05) -> None:
+def main(download_dir: str, check_for_expressvpn: bool,
+         buffer_percent: float=0.05) -> None:
     with console.status("Checking internet connection...", spinner=status_spinner):
         connected = check_connection()
 
@@ -203,6 +202,14 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
     connect_expressvpn(check_for_expressvpn)
     dynamic_print(small_str="CineTerm", medium_str=medium_title_str, large_str=large_title_str)
 
+    with console.status("Reading in movie database..."):
+        try:
+            yts_movies_df = pd.read_pickle(cache_path)
+        except FileNotFoundError:
+            print("Cache file not found!")
+            yts.update_database(cache_path)
+            yts_movies_df = pd.read_pickle(cache_path)
+
     try:
         if play_sounds: start_sound.play()
     except:
@@ -210,7 +217,7 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
         if play_sounds: error_sound.play()
 
     console.print(Markdown("---"))
-    r = request_search_results("Enter movie to search")
+    r = fzf_request_movie(yts_movies_df)
     while True:
         os.system("clear")
         status = r["status"]
@@ -221,24 +228,18 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
             console.print(f"[red]Status:[/red] {status}")
             console.print(f"[red]:[/red] {r['status_message']}")
             console.print(Markdown("---"))
-            r = request_search_results("Retry search")
+            r = fzf_request_movie(yts_movies_df)
             continue
 
-        if r["data"]["movie_count"] == 0:
-            console.print(f"[red]Failed:[/red] No results found!")
-            if play_sounds: error_sound.play()
-            console.print(Markdown("---"))
-            r = request_search_results("Retry search")
-            continue
+        movie = r["data"]["movie"]
+        movie_title = movie["title_long"]
 
-        search_results = r["data"]["movies"]
-
-        results_table = populate_results_table(search_results)
+        # results_table = populate_results_table(movie)
 
         dynamic_print(small_str="Results", medium_str=medium_results_str, large_str=large_results_str)
         console.print(Markdown("---"))
-        console.print(Align(results_table, align="center"))
-        mode_choice = Prompt.ask(" ([red]s[/red])tream ([red]d[/red])ownload ([red]r[/red])e-search ([red]S[/red])ummaries ([red]t[/red])railers ([red]q[/red])uit",
+        # console.print(Align(results_table, align="center"))
+        mode_choice = Prompt.ask(" ([red]s[/red])tream ([red]d[/red])ownload ([red]r[/red])e-search ([red]S[/red])ummary ([red]t[/red])railer ([red]q[/red])uit",
                                  show_choices=False,
                                  choices=['d', 'r', 's', 'S', 't', 'q']) 
         if mode_choice == 'q':
@@ -246,32 +247,22 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
 
         elif mode_choice == 'r':
             console.print(Markdown("---"))
-            r = request_search_results("Search again")
+            r = fzf_request_movie(yts_movies_df)
             continue
 
         elif mode_choice == 't':
-            movie_idx = IntPrompt.ask(f" [yellow]Choose a movie number to watch the trailer for [[red]0-{len(search_results)-1}[/red]][/yellow]",
-                                      show_choices=False,
-                                      choices=[str(i) for i in range(len(search_results))])
-
-            movie_title = search_results[movie_idx]["title_long"]
             console.print("[yellow]Caution:[/yellow] sometimes this will open a random youtube video if the trailer is [red]not found[/red].")
             console.print(f"Opening trailer for {movie_title}...")
-            trailer_url = "https://www.youtube.com/watch?v=" + search_results[movie_idx]["yt_trailer_code"]
+            trailer_url = "https://www.youtube.com/watch?v=" + movie["yt_trailer_code"]
             subprocess.run(["mpv", trailer_url])
         
         elif mode_choice == 'S':
-            movie_idx = IntPrompt.ask(f" [yellow]Choose a movie number to summarize [[red]0-{len(search_results)-1}[/red]][/yellow]",
-                                      show_choices=False,
-                                      choices=[str(i) for i in range(len(search_results))])
-
             os.system("clear")
             console.print(Markdown("---"))
-            movie_title = search_results[movie_idx]["title_long"]
             console.print(Markdown(f"## Summary for {movie_title}:"))
             print("")
-            summary = search_results[movie_idx]["summary"]
-            genres = search_results[movie_idx]["genres"]
+            summary = movie["description_intro"]
+            genres = movie["genres"]
             if not summary or summary == ' ':
                 console.print("   [red]Sorry![/red] No summary available.")
             else:
@@ -291,16 +282,10 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
             continue
         
         else:  # Either stream or download
-            movie_idx = IntPrompt.ask(f" [yellow]Choose a movie number [[red]0-{len(search_results)-1}[/red]][/yellow]",
-                                      show_choices=False,
-                                      choices=[str(i) for i in range(len(search_results))])
-
-            movie_title = search_results[movie_idx]["title_long"]
-
             os.system("clear")
             console.print(f"You have chosen: {movie_title}")
             dynamic_print(small_str="Torrents", medium_str=medium_torrent_str, large_str=large_torrent_str)
-            torrents = search_results[movie_idx]["torrents"]
+            torrents = movie["torrents"]
             for idx, torrent in enumerate(torrents):
                 panel_str = ""
                 panel_str += f"[green]Seeds:[/green] {torrent['seeds']}\n"
@@ -377,4 +362,6 @@ def main(download_dir: str, check_for_expressvpn: bool, buffer_percent: float=0.
 
 
 if __name__ == "__main__":
-    main(download_dir="/home/isaac/Videos/Films/", check_for_expressvpn=True, buffer_percent=0.1)
+    main(download_dir="/home/isaac/Videos/Films/",
+         check_for_expressvpn=True,
+         buffer_percent=0.05)
