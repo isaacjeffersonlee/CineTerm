@@ -34,20 +34,6 @@ large_title_str = """
 """
 
 color_list = [
-    "navy_blue", 
-    "dark_blue", 
-    "blue3", 
-    "blue1", 
-    "dark_green", 
-    "deep_sky_blue4", 
-    "dodger_blue3", 
-    "dodger_blue2", 
-    "green4", 
-    "spring_green4", 
-    "turquoise4", 
-    "deep_sky_blue3", 
-    "dodger_blue1", 
-    "dark_cyan", 
     "light_sea_green", 
     "deep_sky_blue2", 
     "deep_sky_blue1", 
@@ -197,6 +183,13 @@ color_list = [
     "cornsilk"
 ]
 
+# color_list = ["rgb(253,126,126)", "rgb(253,191,134)", "rgb(172,253,179)", "rgb(117,253,242)", "rgb(120,131,253)", "rgb(196,120,253)"]
+
+# color_list = ["#2e41ef", "#4260ea", "#5680e5", "#6a9fe0",
+#               "#7ebfdb", "#92ded6", "#7ebfdb", "#6a9fe0",
+#               "#5680e5", "#4260ea"]
+
+# color_list = ["#ff0000", "#ffa500", "#ffff00", "#008000", "#0000ff", "#4b0082", "#ee82ee"]
 # color_list = ["red", "green", "yellow", "blue", "magenta", "cyan", "white"]
 
 def get_title_str(small_str: str, medium_str: str, large_str: str) -> str:
@@ -213,15 +206,19 @@ def get_title_str(small_str: str, medium_str: str, large_str: str) -> str:
 def display_live_title() -> None:
 
     def generate_title_table(i: int) -> Table:
+        joke_str = "Hi, welcome to chillis!!!!!!!!!!!!!"
         term_width = os.get_terminal_size().columns
-        color = color_list[i%len(color_list)]
-        title_str = get_title_str("CineTerm",
-                                  medium_title_str,
-                                  large_title_str)
+        color_1 = color_list[i % len(color_list)]
+        color_2 = color_list[(2 * i) % len(color_list)]
+        title_str = f"[{color_1}]" + get_title_str("CineTerm", 
+                                                   medium_title_str,
+                                                   large_title_str) + \
+            f"[/{color_1}]" + '\n' + f"[{color_2}]{joke_str[:i % (len(joke_str) + 1)]}[/{color_2}]"
+          
         t = Table(width=term_width, box=None,
                   show_header=False, show_footer=False,
                   show_lines=False, show_edge=False)
-        t.add_row(Panel(Align(renderable=f"[{color}]{title_str}[/{color}]", align="center")))
+        t.add_row(Panel(Align(renderable=title_str, align="center")))
         t.add_row("[red]Ctrl-c[/red] to begin search...")
         return t
 
