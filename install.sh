@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# TODO: Make this cleaner and better input and error checking
+
 set -e  # Stop on error
 
 # if [ $(uname) == "Linux" ]; then
@@ -11,14 +13,14 @@ echo ''
 echo "debian or arch:"
 read distro
 if [ $distro = "debian" ]; then
-    sudo apt install -y python3 python3-pip qbittorrent mpv vlc fzf
+    sudo apt install -y python3 python3-pip qbittorrent mpv vlc fzf youtube-dl
 elif [ $distro = "arch" ]; then
-    sudo pacman -Sy python3 python3-pip qbittorrent mpv vlc fzf
+    sudo pacman -Sy python3 python3-pip qbittorrent mpv vlc fzf youtube-dl
 else
     echo "Invalid choice!"
     echo "Only debian and arch are implemented right now."
     echo "Assuming debian..."
-    sudo apt install -y python3 python3-pip qbittorrent mpv vlc fzf
+    sudo apt install -y python3 python3-pip qbittorrent mpv vlc fzf youtube-dl
 fi
 
 echo ''
