@@ -3,3 +3,5 @@ __pycache__*
 credentials.json
 *.pkl
 *.csv
+*.egg*
+cine_env/
