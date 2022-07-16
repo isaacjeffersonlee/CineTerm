@@ -1,5 +1,6 @@
+#!/bin/python3
+
 import json
-import pandas as pd
 from rich.console import Console  # For pretty printing
 from rich.prompt import IntPrompt, Prompt, Confirm
 from rich.markdown import Markdown
@@ -183,12 +184,16 @@ def main(download_dir: str, check_for_expressvpn: bool,
         print("")
         summary = movie["description_intro"]
         genres = movie["genres"]
+        rating = movie["rating"]
+        runtime = movie["runtime"]
         if not summary or summary == ' ':
             summary = "[red]Sorry![/red] No summary available."
 
         console.print(Align(renderable=Panel(renderable=summary, width=50), align="center"))
         print("")
-        console.print(Align(renderable=f"Rating: {movie['rating']}/10.0", align="center"))
+        console.print(Align(renderable=f"Rating: {rating}/10.0", align="center"))
+        print("")
+        console.print(Align(renderable=f"Runtime: {runtime} mins", align="center"))
         print("")
         console.print(Align(renderable="Genres: " + " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
                             align="center"))
@@ -221,12 +226,20 @@ def main(download_dir: str, check_for_expressvpn: bool,
             print("")
             summary = movie["description_intro"]
             genres = movie["genres"]
+            rating = movie["rating"]
+            runtime = movie["runtime"]
             if not summary or summary == ' ':
                 console.print("   [red]Sorry![/red] No summary available.")
             else:
                 console.print(Align(renderable=Panel(renderable=summary, width=50), align="center"))
+                print("")
+                console.print(Align(renderable=f"Rating: {rating}/10.0", align="center"))
+                print("")
+                console.print(Align(renderable=f"Runtime: {runtime} mins", align="center"))
+                print("")
                 console.print(Align(renderable="Genres: " + " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
                                     align="center"))
+                print("")
                 try:
                     console.print("[red]Ctrl-c[/red] to stop voice.")
                     subprocess.run(["espeak", "-v", speech_language, summary],
