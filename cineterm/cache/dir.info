@@ -1,0 +1,8 @@
+In this project the cache system is implemented as follows:
+
+We update the movies database and then store the results in a pandas dataframe
+and then save this as a pickle file. This is much faster and more compact than
+storing and reading as a csv.
+
+Then everytime the app starts we load this pickle file into a dataframe object
+and we can fuzzy search for movie title names.
