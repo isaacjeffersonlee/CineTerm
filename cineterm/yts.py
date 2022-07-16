@@ -103,7 +103,7 @@ def update_database(cache_path: str) -> None:
             console.print(f"[bold]{new_movie_count-previous_movie_count}[/bold] new movies found!")
 
         console.print(f"Caching results to {cache_path}")
-        all_movies_df.to_pickle(f"{lib_path}/yts_movies_df.pkl")
+        all_movies_df.to_pickle(cache_path)
 
         with console.status("Generating summary map..."):
             title_to_info_map = {all_movies_df["title"].iloc[i] : f"\033[96m Summary: {all_movies_df['title_long'].iloc[i]}\033[00m\n" + '-'*len(f"Summary: {all_movies_df['title_long'].iloc[i]}") + '\n' + f"[\033[92mReleased\033[00m]: {all_movies_df['year'].iloc[i]}\n" + f"[\033[92mRating\033[00m]: {all_movies_df['rating'].iloc[i]}/10.0" + "\n\n" + str(all_movies_df["summary"].iloc[i]) + "\n\n" + "[\033[91mGenres\033[00m]: " + str(all_movies_df["genres"].iloc[i]) for i in range(all_movies_df.shape[0])}
@@ -113,9 +113,20 @@ def update_database(cache_path: str) -> None:
 
         console.print("[green bold]Success! Summary map generated[/]")
 
+def read_in_movies_df(cache_path: str) -> pd.DataFrame:
+    with console.status("Reading in movie database..."):
+        try:
+            yts_movies_df = pd.read_pickle(cache_path)
+            return yts_movies_df
+        except FileNotFoundError:
+            print("Cache file not found!")
+            pass
+
+    update_database(cache_path)
+    yts_movies_df = pd.read_pickle(cache_path)
+    return yts_movies_df
 
 if __name__ == "__main__":
-    # TODO: Extract this all to a function: "update_database"
     cache_path = f"{lib_path}/yts_movies_df.pkl"
     update_database(cache_path)
 
