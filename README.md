@@ -24,7 +24,7 @@ Then once a film has been selected you have the following options:
 
 | Option         | Description                                                  |
 | -------------- | ------------------------------------------------------------ |
-| (**s**)ream    | Stream the movie, i.e sequentially download and open in mpv with the option to delete after viewing. |
+| (**s**)tream    | Stream the movie, i.e sequentially download and open in mpv with the option to delete after viewing. |
 | (**d**)ownload | Download the movie.                                          |
 | (**S**)peak    | Read the summary with text to speech.                        |
 | (**t**)railer  | Open the YouTube trailer in mpv (uses youtube-dl).           |
