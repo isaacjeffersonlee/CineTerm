@@ -24,7 +24,9 @@ def fzf_request_movie(yts_movies_df: pd.DataFrame, console: Console) -> dict:
     """Fuzzy prompt the user for search query and send a request to yts."""
     movie_id = fzf_get_movie_id(yts_movies_df)
     if movie_id != -1:  # Use -1 instead of 0 encase 0 is a valid movie id
-        with console.status("Updating movie details for selected film..."):
+        console.print("[yellow] Caution:[/yellow] if a vpn is not active, your ISP may have blocked YTS so this could hang.")
+        console.print("To prevent this, make sure to either pass --vpn and use activate_vpn.sh or activate a vpn before launch.")
+        with console.status(" Sending a request to [green]YTS[/green] to get torrents..."):
             r = yts.yts_request(endpoint="movie_details.json",
                                 params={"movie_id": movie_id})
         return r
