@@ -122,8 +122,6 @@ python -m cineterm.app --args
 ### Optional Arguments
 
 ```
-usage: app.py [-h] [-d DOWNLOAD_DIR] [-v] [-s] [-b BUFFER_PERCENT]
-
 optional arguments:
   -h, --help            show this help message and exit
   -d DOWNLOAD_DIR, --download-dir DOWNLOAD_DIR
@@ -131,7 +129,8 @@ optional arguments:
   -v, --vpn             Call activate_vpn.sh on startup.
   -s, --sounds          Play sound effects.
   -b BUFFER_PERCENT, --buffer-percent BUFFER_PERCENT
-                        Play sound effects.
+                        Percentage to download file before opening.
+                        Recommended is 0.05
 ```
 
 ### VPNs

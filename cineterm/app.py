@@ -359,7 +359,7 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--buffer-percent",
                         dest="buffer_percent",
                         type=float,
-                        help="Play sound effects.")
+                        help="Percentage to download file before opening.\n Recommended is 0.05")
 
     args = parser.parse_args()
 
