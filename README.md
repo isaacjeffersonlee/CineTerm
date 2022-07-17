@@ -88,6 +88,18 @@ The install script will install the required applications and necessary python r
 **Caution**: Ensure you activate any virtual env you want to use before running the install 
 script, otherwise all the dependencies will be installed system wide. (Which you could possible want).
 
+First cd into the CineTerm where install.sh is located and then give executable permissions:
+
+```sh
+cd CineTerm && chmod +x install.sh
+```
+
+Then run install.sh:
+
+```sh
+./install.sh
+```
+
 ### Requirements
 
 #### Python Packages
