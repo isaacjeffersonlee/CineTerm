@@ -133,7 +133,7 @@ Within the repo there is an activate_vpn.sh script. Add whatever command you use
 python -m cineterm.app --vpn
 ```
 
-## Demos
+## Demos (may take some time to load gifs...)
 
 ### Demo 1: Fuzzy Searching
 
