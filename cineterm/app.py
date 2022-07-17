@@ -28,18 +28,12 @@ import selector
 import qbittorrent as qb
 import yts
 
-
 # Todo List
 # TODO: Refactor
-# - More separation of concerns
-# - Docstrings
-# - Cleaner dir structure
-# TODO: Add recommendation system
-# TODO: Add more error checking
-# TODO: Upload to git
-# - Nice README.md
-# - .gitignore
-# TODO: Improve install.sh
+# - Create functions from main loop code
+# - 
+# - Better Docstrings
+# TODO: Add random recommendation system
 
 # Rich setup for pretty printing
 status_spinner = "dots"
@@ -73,8 +67,6 @@ def check_connection(timeout: int = 1) -> bool:
         requests.head("http://www.google.com/", timeout=timeout)
         return True
     except requests.ConnectionError:
-        if play_sounds:
-            error_sound.play()
         return False
 
 
