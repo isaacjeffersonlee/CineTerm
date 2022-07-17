@@ -1,58 +1,79 @@
 #!/bin/sh
 
 # TODO: Make this cleaner and better input and error checking
+# TODO: Add MacOS support
 
 set -e  # Stop on error
 
-# if [ $(uname) == "Linux" ]; then
-    # echo "Detected Linux operating system!"
-echo "Note: Currently this script only works Linux."
-echo ''
-echo ">>>>>>>>>>>>>>>>> INSTALLING REQUIRED APPLICATIONS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-echo ''
-echo "debian or arch:"
-read distro
-if [ $distro = "debian" ]; then
-    sudo apt install -y python3 python3-pip qbittorrent mpv vlc fzf youtube-dl
-elif [ $distro = "arch" ]; then
-    sudo pacman -Sy python3 python3-pip qbittorrent mpv vlc fzf youtube-dl
+if [ "$(uname)" != "Linux" ]; then
+    echo "Currently only linux is supported!"
 else
-    echo "Invalid choice!"
-    echo "Only debian and arch are implemented right now."
-    echo "Assuming debian..."
-    sudo apt install -y python3 python3-pip qbittorrent mpv vlc fzf youtube-dl
+    echo "Note: Currently this script only works Linux."
+    echo ">>>>>>>>>>>>>>>>> INSTALLING REQUIRED APPLICATIONS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    DISTRO=""
+    while [ "$DISTRO" != "debian" ] && [ "$DISTRO" != "arch" ]
+    do
+        read -p "debian or arch: " DISTRO 
+        if [ "$DISTRO" = "debian" ]; then
+            sudo apt install -y qbittorrent mpv vlc fzf youtube-dl espeak
+        elif [ "$DISTRO" = "arch" ]; then
+            sudo pacman -Sy qbittorrent mpv vlc fzf youtube-dl espeak
+        else
+            echo "Invalid choice!"
+            echo "Only 'debian' and 'arch' are implemented right now."
+        fi
+    done
+
+    echo ''
+    echo ">>>>>>>>>>>>>>>>> INSTALLING REQUIRED PYTHON MODULES >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "Installing requirements..."
+    pip install -r requirements.txt
+    echo "Installing the cineterm module..."
+    cd .. && pip install -e CineTerm && cd CineTerm
+    echo ''
+    echo ">>>>>>>>>>>>>>>>> GIVE PERMISSIONS TO VPN ACTIVATOR >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    sudo chmod +x activate_vpn.sh
+    echo ''
+    echo ">>>>>>>>>>>>>>>>> CREATING CONFIG FILE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    DOWNLOAD_DIR=""
+    while [ -z "$DOWNLOAD_DIR" ]
+    do
+        read -p "Download directory path: " DOWNLOAD_DIR 
+        if [ -z "$DOWNLOAD_DIR" ]; then
+            echo "Please enter a download directory path!"
+        else
+            echo "Will download movies to: $DOWNLOAD_DIR"
+        fi
+    done
+    QB_USER=""
+    while [ -z "$QB_USER" ]
+    do
+        read -p "qbittorrent web api username: " QB_USER 
+        if [ -z "$QB_USER" ]; then
+            echo "Please enter a username!"
+        else
+            echo "Setting qbittorrent username as $QB_USER"
+        fi
+    done
+    QB_PASS=""
+    while [ -z "$QB_PASS" ]
+    do
+        read -p "qbittorrent web api password: " QB_PASS 
+        if [ -z "$QB_PASS" ]; then
+            echo "Please enter a passowrd!"
+        else
+            echo "Setting qbittorrent password as $QB_PASS"
+        fi
+    done
+        touch config.json
+        echo '{' >> config.json
+        echo '    "qb_username": "'"$QB_USER"'",'>> config.json
+        echo '    "qb_password": "'"$QB_PASS"'",'>> config.json
+        echo '    "download_dir": "'"$DOWNLOAD_DIR"'"'>> config.json
+        echo '}' >> config.json
+    echo "Generating config.json..."
+    echo ">>>>>>>>>>>>>>>>>>>>>> DONE! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo "You should now be able to run with python -m cineterm.app"
+    echo "You can also have the app call activate_vpn.sh by adding the flag --vpn."
+    echo "I.e run with python -m cineterm.app --vpn"
 fi
-
-echo ''
-echo ">>>>>>>>>>>>>>>>> INSTALLING REQUIRED PYTHON MODULES >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-echo ''
-echo "Creating virtual environment /cine_env"
-python3 -m venv cine_env
-echo "Installing requirements..."
-cine_env/bin/pip3 install -r requirements.txt
-echo "Installing the cineterm module..."
-cd .. && CineTerm/cine_env/bin/pip3 install -e CineTerm && cd CineTerm
-echo ''
-echo ">>>>>>>>>>>>>>>>> MAKING EXECUTABLE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-echo ''
-echo "Giving executable permissions..."
-chmod +x $PWD/bin/cineterm
-echo ''
-echo "Shell currently in use:"
-echo "Options: 'zsh', 'bash', 'fish'"
-echo ''
-read shell
-if [ $shell = "zsh" ]; then
-    echo "export PATH=$PWD/bin/:$PATH" >> ~/.zshrc
-elif [ $shell = "bash" ]; then
-    echo "export PATH=$PWD/bin/:$PATH" >> ~/.bashrc
-elif [ $shell == "fish" ]; then
-    echo "fish_add_path export PATH=$PWD/bin/:$PATH" >> ~/.config/fish/config.fish
-
-else
-    echo "Invalid option!"
-fi
-
-echo ">>>>>>>>>>>>>>>>>>>>>> DONE! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-echo ''
-
