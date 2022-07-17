@@ -1,9 +1,5 @@
 #!/bin/python3
 
-import title
-import selector
-import qbittorrent as qb
-import yts
 import json
 from rich.console import Console  # For pretty printing
 from rich.prompt import IntPrompt, Prompt, Confirm
@@ -27,6 +23,10 @@ root_path = os.path.dirname(lib_path)
 logfile_path = root_path + "/logfile.log"
 sys.path.append(lib_path)
 cache_path = f"{lib_path}/cache/yts_movies_df.pkl"
+import title
+import selector
+import qbittorrent as qb
+import yts
 
 
 # Todo List
