@@ -73,6 +73,7 @@ sudo apt install sudo apt install qbittorrent mpv vlc fzf youtube-dl espeak
 Once qbittorrent is installed, we need to get the web API key. On the top bar under 
 
 *Tools*  > *Preferences* tick the Web User Interface (Remote control) option and then add a Username and Password, then click apply.
+Also make sure Port is set to 8080. (This should be the default).
 
 ![](./media/qbittorrent_screenshot.png)
 
