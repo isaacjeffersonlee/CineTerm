@@ -1,8 +1,0 @@
-#!/bin/sh
-BIN_PATH=$(dirname "$0")  # Path of project bin dir
-ENV_PATH="$(dirname "$BIN_PATH")/cine_env"  # Absolute path to virtual env
-if [ -z "$ENV_PATH" ]; then
-  exit 1  # Fail
-fi
-# Launch app using cine_env environment interpreter
-"$ENV_PATH"/bin/python3 -m cineterm.app
