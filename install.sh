@@ -65,15 +65,19 @@ else
             echo "Setting qbittorrent password as $QB_PASS"
         fi
     done
+    if [ -f "config.json" ]; then
+        echo "config.json detected!"
+    else
         touch config.json
         echo '{' >> config.json
         echo '    "qb_username": "'"$QB_USER"'",'>> config.json
         echo '    "qb_password": "'"$QB_PASS"'",'>> config.json
         echo '    "download_dir": "'"$DOWNLOAD_DIR"'"'>> config.json
         echo '}' >> config.json
-    echo "Generating config.json..."
+        echo "Generating config.json..."
+    fi
     echo ">>>>>>>>>>>>>>>>>>>>>> DONE! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-    echo "You should now be able to run with python -m cineterm.app"
-    echo "You can also have the app call activate_vpn.sh by adding the flag --vpn."
-    echo "I.e run with python -m cineterm.app --vpn"
+    echo "You should now be able to run with python -m cineterm.app --options"
+    echo "Where --options are:"
+    python -m cineterm.app -h
 fi
