@@ -14,6 +14,7 @@ import requests
 from fuzzywuzzy import process
 from fuzzywuzzy import fuzz
 import vlc
+import argparse
 import os
 import sys
 lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cineterm"))
@@ -33,63 +34,37 @@ import title
 # - More separation of concerns
 # - Docstrings
 # - Cleaner dir structure
-# TODO: Add fuzzy searching
 # TODO: Add recommendation system
-# TODO: Add option to delete torrent when mpv is closed
 # TODO: Add more error checking
 # TODO: Upload to git
 # - Nice README.md 
 # - .gitignore
-# TODO: Add install.sh
+# TODO: Improve install.sh
 
 # Rich setup for pretty printing
 status_spinner = "dots"
 console = Console()
 
-play_sounds = True
 try:
     start_sound = vlc.MediaPlayer(f"{root_path}/media/start_sound.mp3")
     error_sound = vlc.MediaPlayer(f"{root_path}/media/error_sound.mp3")
     torrent_added_sound = vlc.MediaPlayer(f"{root_path}/media/yeah_boy.mp3")
     prof_sound = vlc.MediaPlayer(f"{root_path}/media/watch_your_profanity.mp3")
 except:
-    play_sounds = False
+    pass
 
-with open(f"{root_path}/credentials.json", 'r') as f:
-    credentials = json.load(f)
+with open(f"{root_path}/config.json", 'r') as f:
+    config = json.load(f)
 
 # qbittorrent details
-qb_username = credentials["qb_username"]
-qb_password = credentials["qb_password"]
+QB_USERNAME = config["qb_username"]
+QB_PASSWORD = config["qb_password"]
+# Download dir
+DOWNLOAD_DIR = config["download_dir"]
+
 
 # For text to speech
 speech_language = "en-uk-wmids"
-
-
-
-
-medium_torrent_str = """
-████████╗ ██████╗ ██████╗ ██████╗ ███████╗███╗   ██╗████████╗
-╚══██╔══╝██╔═══██╗██╔══██╗██╔══██╗██╔════╝████╗  ██║╚══██╔══╝
-   ██║   ██║   ██║██████╔╝██████╔╝█████╗  ██╔██╗ ██║   ██║   
-   ██║   ██║   ██║██╔══██╗██╔══██╗██╔══╝  ██║╚██╗██║   ██║   
-   ██║   ╚██████╔╝██║  ██║██║  ██║███████╗██║ ╚████║   ██║   
-   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   
-"""
-
-large_torrent_str = """
-    ███      ▄██████▄     ▄████████    ▄████████    ▄████████ ███▄▄▄▄       ███        ▄████████ 
-▀█████████▄ ███    ███   ███    ███   ███    ███   ███    ███ ███▀▀▀██▄ ▀█████████▄   ███    ███ 
-   ▀███▀▀██ ███    ███   ███    ███   ███    ███   ███    █▀  ███   ███    ▀███▀▀██   ███    █▀  
-    ███   ▀ ███    ███  ▄███▄▄▄▄██▀  ▄███▄▄▄▄██▀  ▄███▄▄▄     ███   ███     ███   ▀   ███        
-    ███     ███    ███ ▀▀███▀▀▀▀▀   ▀▀███▀▀▀▀▀   ▀▀███▀▀▀     ███   ███     ███     ▀███████████ 
-    ███     ███    ███ ▀███████████ ▀███████████   ███    █▄  ███   ███     ███              ███ 
-    ███     ███    ███   ███    ███   ███    ███   ███    ███ ███   ███     ███        ▄█    ███ 
-   ▄████▀    ▀██████▀    ███    ███   ███    ███   ██████████  ▀█   █▀     ▄████▀    ▄████████▀  
-                         ███    ███   ███    ███                                                
-"""
-
-
 
 
 def check_connection(timeout: int=1) -> bool:
@@ -115,19 +90,20 @@ def populate_results_table(search_results: list[dict]) -> Table:
     return results_table
 
 
-def connect_expressvpn() -> None:
+def connect_vpn() -> None:
     """Activate expressvpn connection."""
     try:
-        with console.status("Connecting to expressvpn...", spinner=status_spinner):
-            subprocess.run(["expressvpn", "connect"],
-                           stdout=open("/dev/null", 'w'),
-                           stderr=open(logfile_path, 'a'))
-        console.print("[green]Success:[/green] connected to expressvpn!")
+        # with console.status("Connecting to vpn...", spinner=status_spinner):
+        console.print(f"Running {root_path}/activate_vpn.sh")
+        subprocess.run([f"{root_path}/activate_vpn.sh"])
+                           # stdout=open("/dev/null", 'w'),
+                           # stderr=open(logfile_path, 'a'))
+        # console.print("[green]Success:[/green] connected to vpn!")
     except:
-        console.print("[red]Warning:[/red] expressvpn failed to connect!")
+        console.print("[red]Warning:[/red] vpn failed to connect!")
 
 
-def main(download_dir: str, check_for_expressvpn: bool,
+def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
          buffer_percent: float=0.05) -> None:
 
     with console.status("Checking internet connection...", spinner=status_spinner):
@@ -140,7 +116,7 @@ def main(download_dir: str, check_for_expressvpn: bool,
 
     os.system("clear")
 
-    if check_for_expressvpn: connect_expressvpn()
+    if activate_vpn: connect_vpn()
 
     if play_sounds:
         try:
@@ -255,7 +231,7 @@ def main(download_dir: str, check_for_expressvpn: bool,
         else:  # Either stream or download
             os.system("clear")
             console.print(f"You have chosen: {movie_title}")
-            torrent_title_str = title.get_title_str(small_str="Torrents", medium_str=medium_torrent_str, large_str=large_torrent_str)
+            torrent_title_str = title.get_title_str(small_str="Torrents", medium_str=title.medium_torrent_str, large_str=title.large_torrent_str)
             console.print(Panel(Align(renderable=torrent_title_str, align="center")))
             torrents = movie["torrents"]
             for idx, torrent in enumerate(torrents):
@@ -278,8 +254,8 @@ def main(download_dir: str, check_for_expressvpn: bool,
 
             with console.status(f"Connecting to qbittorrent...", spinner=status_spinner):
                 login_cookies = qb.login(logfile_path=logfile_path,
-                                         qb_username=qb_username,
-                                         qb_password=qb_password)
+                                         qb_username=QB_USERNAME,
+                                         qb_password=QB_PASSWORD)
 
             with console.status(f"Adding torrent to qbittorrent..."):
                 qb.add_torrent(magnet_link=magnet_link,
@@ -358,9 +334,7 @@ def main(download_dir: str, check_for_expressvpn: bool,
                 console.print("[green]Seeding[/green] / [red]Leeching[/red] stopped!")
                 console.print(f"Files{' ' if delete_after_viewing else ' [green]not[/green] '}deleted!")
 
-            print("")
             console.print("[red]❤[/red] [cyan]Goodbye![/cyan] [red]❤[/red]")
-            print("")
             break
 
 
@@ -368,6 +342,39 @@ def main(download_dir: str, check_for_expressvpn: bool,
 
 
 if __name__ == "__main__":
-    main(download_dir="/home/isaac/Videos/Films/",
-         check_for_expressvpn=True,
-         buffer_percent=0.05)
+
+    parser = argparse.ArgumentParser()  # For command line args
+
+    parser.add_argument("-d", "--download-dir", 
+                        dest="download_dir",
+                        help="Path of directory to download films to.")
+    parser.add_argument("-v", "--vpn",
+                        action="store_true",
+                        dest="activate_vpn",
+                        help="Call activate_vpn.sh on startup.")
+    parser.add_argument("-s", "--sounds",
+                        dest="play_sounds",
+                        action="store_true",
+                        help="Play sound effects.")
+    parser.add_argument("-b", "--buffer-percent",
+                        dest="buffer_percent",
+                        type=float,
+                        help="Play sound effects.")
+
+    args = parser.parse_args()
+
+    if not args.download_dir:
+        download_dir = DOWNLOAD_DIR
+    else:
+        download_dir = args.download_dir
+    
+    if not args.buffer_percent:
+        buffer_percent = 0.05
+    else:
+        buffer_percent = args.buffer_percent
+        assert 0.0 < buffer_percent and buffer_percent < 1.0, "Buffer percent must be between 0.0 and 1.0"
+
+    main(download_dir=download_dir,
+         activate_vpn=args.activate_vpn,
+         play_sounds=args.play_sounds,
+         buffer_percent=buffer_percent)
