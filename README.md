@@ -144,16 +144,16 @@ Within the repo there is an activate_vpn.sh script. Add whatever command you use
 python -m cineterm.app --vpn
 ```
 
-## Demos (may take some time to load gifs...)
+## Demos
 
 ### Demo 1: Fuzzy Searching
 
-![](./media/cineterm_demo_2.gif)
+![](./media/cineterm_demo_1.gif)
 
 ### Demo 2: Open Trailer in mpv
 
-![](./media/cineterm_demo_3.gif)
+![](./media/cineterm_demo_2.gif)
 
 ### Demo 3: Streaming
 
-![](./media/cineterm_demo_4.gif)
+![](./media/cineterm_demo_3.gif)
