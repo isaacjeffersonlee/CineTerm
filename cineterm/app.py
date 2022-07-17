@@ -17,12 +17,12 @@ import vlc
 import argparse
 import os
 import sys
-lib_path = os.path.abspath(os.path.join(
+LIB_PATH = os.path.abspath(os.path.join(
     os.path.dirname(__file__), "../cineterm"))
-root_path = os.path.dirname(lib_path)
-logfile_path = root_path + "/logfile.log"
-sys.path.append(lib_path)
-cache_path = f"{lib_path}/cache/yts_movies_df.pkl"
+ROOT_PATH = os.path.dirname(LIB_PATH)
+logfile_path = ROOT_PATH + "/logfile.log"
+sys.path.append(LIB_PATH)
+CACHE_PATH = f"{LIB_PATH}/cache/yts_movies_df.pkl"
 import title
 import selector
 import qbittorrent as qb
@@ -40,14 +40,14 @@ status_spinner = "dots"
 console = Console()
 
 try:
-    start_sound = vlc.MediaPlayer(f"{root_path}/media/start_sound.mp3")
-    error_sound = vlc.MediaPlayer(f"{root_path}/media/error_sound.mp3")
-    torrent_added_sound = vlc.MediaPlayer(f"{root_path}/media/yeah_boy.mp3")
-    prof_sound = vlc.MediaPlayer(f"{root_path}/media/watch_your_profanity.mp3")
+    start_sound = vlc.MediaPlayer(f"{ROOT_PATH}/media/start_sound.mp3")
+    error_sound = vlc.MediaPlayer(f"{ROOT_PATH}/media/error_sound.mp3")
+    torrent_added_sound = vlc.MediaPlayer(f"{ROOT_PATH}/media/yeah_boy.mp3")
+    prof_sound = vlc.MediaPlayer(f"{ROOT_PATH}/media/watch_your_profanity.mp3")
 except:
     pass
 
-with open(f"{root_path}/config.json", 'r') as f:
+with open(f"{ROOT_PATH}/config.json", 'r') as f:
     config = json.load(f)
 
 # qbittorrent details
@@ -87,8 +87,8 @@ def connect_vpn() -> None:
     """Activate expressvpn connection."""
     try:
         # with console.status("Connecting to vpn...", spinner=status_spinner):
-        console.print(f"Running {root_path}/activate_vpn.sh")
-        subprocess.run([f"{root_path}/activate_vpn.sh"])
+        console.print(f"Running {ROOT_PATH}/activate_vpn.sh")
+        subprocess.run([f"{ROOT_PATH}/activate_vpn.sh"])
         # stdout=open("/dev/null", 'w'),
         # stderr=open(logfile_path, 'a'))
         # console.print("[green]Success:[/green] connected to vpn!")
@@ -120,7 +120,7 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
             console.print("[gray]Error playing start sound effect![/gray]")
             error_sound.play()
 
-    yts_movies_df = yts.read_in_movies_df(cache_path)
+    yts_movies_df = yts.read_in_movies_df(CACHE_PATH)
 
     title.display_live_title()
 
