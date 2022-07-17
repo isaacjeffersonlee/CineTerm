@@ -1,5 +1,9 @@
 #!/bin/python3
 
+import title
+import selector
+import qbittorrent as qb
+import yts
 import json
 from rich.console import Console  # For pretty printing
 from rich.prompt import IntPrompt, Prompt, Confirm
@@ -17,16 +21,12 @@ import vlc
 import argparse
 import os
 import sys
-lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cineterm"))
+lib_path = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), "../cineterm"))
 root_path = os.path.dirname(lib_path)
 logfile_path = root_path + "/logfile.log"
 sys.path.append(lib_path)
 cache_path = f"{lib_path}/cache/yts_movies_df.pkl"
-
-import yts
-import qbittorrent as qb
-import selector
-import title
 
 
 # Todo List
@@ -37,7 +37,7 @@ import title
 # TODO: Add recommendation system
 # TODO: Add more error checking
 # TODO: Upload to git
-# - Nice README.md 
+# - Nice README.md
 # - .gitignore
 # TODO: Improve install.sh
 
@@ -67,13 +67,14 @@ DOWNLOAD_DIR = config["download_dir"]
 speech_language = "en-uk-wmids"
 
 
-def check_connection(timeout: int=1) -> bool:
+def check_connection(timeout: int = 1) -> bool:
     """Ping google to check internet connection."""
     try:
         requests.head("http://www.google.com/", timeout=timeout)
         return True
     except requests.ConnectionError:
-        if play_sounds: error_sound.play()
+        if play_sounds:
+            error_sound.play()
         return False
 
 
@@ -96,27 +97,29 @@ def connect_vpn() -> None:
         # with console.status("Connecting to vpn...", spinner=status_spinner):
         console.print(f"Running {root_path}/activate_vpn.sh")
         subprocess.run([f"{root_path}/activate_vpn.sh"])
-                           # stdout=open("/dev/null", 'w'),
-                           # stderr=open(logfile_path, 'a'))
+        # stdout=open("/dev/null", 'w'),
+        # stderr=open(logfile_path, 'a'))
         # console.print("[green]Success:[/green] connected to vpn!")
     except:
         console.print("[red]Warning:[/red] vpn failed to connect!")
 
 
 def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
-         buffer_percent: float=0.05) -> None:
+         buffer_percent: float = 0.05) -> None:
 
     with console.status("Checking internet connection...", spinner=status_spinner):
         connected = check_connection()
 
     if not connected:
         console.print("[red]Error:[/red] Internet is not connected!")
-        if play_sounds: error_sound.play()
+        if play_sounds:
+            error_sound.play()
         return None
 
     os.system("clear")
 
-    if activate_vpn: connect_vpn()
+    if activate_vpn:
+        connect_vpn()
 
     if play_sounds:
         try:
@@ -128,7 +131,6 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
     yts_movies_df = yts.read_in_movies_df(cache_path)
 
     title.display_live_title()
-
 
     console.print(Markdown("---"))
 
@@ -142,7 +144,8 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
         status = r["status"]
         if status == "ok":
             console.print(f"[green]Status:[/green] {status}")
-            console.print(f"[green]Status Message:[/green] {r['status_message']}")
+            console.print(
+                f"[green]Status Message:[/green] {r['status_message']}")
         else:
             console.print(f"[red]Status:[/red] {status}")
             console.print(f"[red]:[/red] {r['status_message']}")
@@ -165,11 +168,14 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
         if not summary or summary == ' ':
             summary = "[red]Sorry![/red] No summary available."
 
-        console.print(Align(renderable=Panel(renderable=summary, width=50), align="center"))
+        console.print(Align(renderable=Panel(
+            renderable=summary, width=50), align="center"))
         print("")
-        console.print(Align(renderable=f"Rating: {rating}/10.0", align="center"))
+        console.print(
+            Align(renderable=f"Rating: {rating}/10.0", align="center"))
         print("")
-        console.print(Align(renderable=f"Runtime: {runtime} mins", align="center"))
+        console.print(
+            Align(renderable=f"Runtime: {runtime} mins", align="center"))
         print("")
         console.print(Align(renderable="Genres: " + " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
                             align="center"))
@@ -177,10 +183,11 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
         console.print(Markdown("---"))
         print("")
         # console.print(Align(results_table, align="center"))
-        console.print(Align(renderable=" ([red bold]s[/red bold])tream ([red bold]d[/red bold])ownload ([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak ([red bold]t[/red bold])railer ([red bold]q[/red bold])uit", align="center"))
+        console.print(Align(
+            renderable=" ([red bold]s[/red bold])tream ([red bold]d[/red bold])ownload ([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak ([red bold]t[/red bold])railer ([red bold]q[/red bold])uit", align="center"))
         mode_choice = Prompt.ask(" [yellow]Enter action letter[/yellow]",
                                  show_choices=False,
-                                 choices=['d', 'r', 's', 'S', 't', 'q']) 
+                                 choices=['d', 'r', 's', 'S', 't', 'q'])
         if mode_choice == 'q':
             break
 
@@ -190,11 +197,13 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
             continue
 
         elif mode_choice == 't':
-            console.print("[yellow]Caution:[/yellow] sometimes this will open a random youtube video if the trailer is [red]not found[/red].")
+            console.print(
+                "[yellow]Caution:[/yellow] sometimes this will open a random youtube video if the trailer is [red]not found[/red].")
             console.print(f"Opening trailer for {movie_title}...")
-            trailer_url = "https://www.youtube.com/watch?v=" + movie["yt_trailer_code"]
+            trailer_url = "https://www.youtube.com/watch?v=" + \
+                movie["yt_trailer_code"]
             subprocess.run(["mpv", trailer_url])
-        
+
         elif mode_choice == 'S':
             os.system("clear")
             console.print(Markdown("---"))
@@ -207,11 +216,14 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
             if not summary or summary == ' ':
                 console.print("   [red]Sorry![/red] No summary available.")
             else:
-                console.print(Align(renderable=Panel(renderable=summary, width=50), align="center"))
+                console.print(Align(renderable=Panel(
+                    renderable=summary, width=50), align="center"))
                 print("")
-                console.print(Align(renderable=f"Rating: {rating}/10.0", align="center"))
+                console.print(
+                    Align(renderable=f"Rating: {rating}/10.0", align="center"))
                 print("")
-                console.print(Align(renderable=f"Runtime: {runtime} mins", align="center"))
+                console.print(
+                    Align(renderable=f"Runtime: {runtime} mins", align="center"))
                 print("")
                 console.print(Align(renderable="Genres: " + " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
                                     align="center"))
@@ -223,16 +235,18 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
                                    stderr=open(logfile_path, 'a'))
                 except:
                     pass
-    
+
             print("")
             os.system("clear")
             continue
-        
+
         else:  # Either stream or download
             os.system("clear")
             console.print(f"You have chosen: {movie_title}")
-            torrent_title_str = title.get_title_str(small_str="Torrents", medium_str=title.medium_torrent_str, large_str=title.large_torrent_str)
-            console.print(Panel(Align(renderable=torrent_title_str, align="center")))
+            torrent_title_str = title.get_title_str(
+                small_str="Torrents", medium_str=title.medium_torrent_str, large_str=title.large_torrent_str)
+            console.print(
+                Panel(Align(renderable=torrent_title_str, align="center")))
             torrents = movie["torrents"]
             for idx, torrent in enumerate(torrents):
                 panel_str = ""
@@ -240,12 +254,13 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
                 panel_str += f"[red]Peers:[/red] {torrent['peers']}\n"
                 panel_str += f"Torrent Quality: [bold]{torrent['quality']}[/bold]\n"
                 panel_str += f"Torrent Size: [blue]{torrent['size']}[/blue]"
-                console.print(Align(Panel(renderable=panel_str, title=f"Torrent [[red]{idx}[/red]]", width=30), align="center"))
+                console.print(Align(Panel(
+                    renderable=panel_str, title=f"Torrent [[red]{idx}[/red]]", width=30), align="center"))
 
             console.print(Markdown("---"))
             torrent_idx = IntPrompt.ask(f" [yellow]Choose a torrent number [[red]0-{len(torrents)-1}[/red]][/yellow]",
-                                      show_choices=False,
-                                      choices=[str(i) for i in range(len(torrents))])
+                                        show_choices=False,
+                                        choices=[str(i) for i in range(len(torrents))])
 
             torrent_hash = torrents[torrent_idx]["hash"]
             torrent_url = torrents[torrent_idx]["url"]
@@ -266,23 +281,29 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
             console.print(" [green]Added torrent![/green]")
 
             if mode_choice == 's':  # Open the torrent in mpv
-                delete_after_viewing = Confirm.ask(" [yellow]Delete torrent files after viewing?[/yellow]")
+                delete_after_viewing = Confirm.ask(
+                    " [yellow]Delete torrent files after viewing?[/yellow]")
                 if play_sounds:
                     try:
                         torrent_added_sound.play()
                     except:
-                        console.print("[gray]Error playing sound effect.[/gray]")
+                        console.print(
+                            "[gray]Error playing sound effect.[/gray]")
                         error_sound.play()
                 # console.print(f"Total torrent bytes: {torrent_size_bytes}")
-                download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
+                download_info = qb.get_torrent_progress(
+                    torrent_hash=torrent_hash, login_cookies=login_cookies)
 
                 with Progress() as progress:
-                    buffer_task = progress.add_task(description="[yellow] Waiting to begin download...[/yellow]", total=None)
+                    buffer_task = progress.add_task(
+                        description="[yellow] Waiting to begin download...[/yellow]", total=None)
 
-                    while not download_info["size"]:  # Wait until torrent has started downloading
+                    # Wait until torrent has started downloading
+                    while not download_info["size"]:
                         time.sleep(0.5)
-                        download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
-                    
+                        download_info = qb.get_torrent_progress(
+                            torrent_hash=torrent_hash, login_cookies=login_cookies)
+
                     # Update total size once torrent starts downloading
                     progress.update(task_id=buffer_task,
                                     description=f" [green]Buffering to {buffer_percent*100}% of file...[/green]",
@@ -291,30 +312,36 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
                     # We only wait for 10% completion before opening the file.
                     while download_info["availability"] != -1 and download_info["downloaded"] / download_info["size"] < buffer_percent:
-                        download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
-                        progress.update(buffer_task, completed=download_info["downloaded"])
+                        download_info = qb.get_torrent_progress(
+                            torrent_hash=torrent_hash, login_cookies=login_cookies)
+                        progress.update(
+                            buffer_task, completed=download_info["downloaded"])
                         time.sleep(0.5)
 
                 all_items_in_download_dir = os.listdir(download_dir)
                 # Fuzzy match the file name since the torrent files often have unexpected names.
-                best_match = process.extractOne(movie_title, all_items_in_download_dir, scorer=fuzz.token_sort_ratio)[0]
+                best_match = process.extractOne(
+                    movie_title, all_items_in_download_dir, scorer=fuzz.token_sort_ratio)[0]
                 torrent_dir = download_dir + best_match + '/'
                 for file in os.listdir(torrent_dir):
                     ext = file.split('.')[-1]
                     if ext == 'mp4' or ext == 'mkv':
-                        console.print(f" [green]Opening:[/green][white]{torrent_dir + file}[/white] in mpv.")
+                        console.print(
+                            f" [green]Opening:[/green][white]{torrent_dir + file}[/white] in mpv.")
                         subprocess.run(["mpv", torrent_dir + file])
                         break
 
-
                 if not delete_after_viewing:  # Wait for the torrent to finish downloading
                     with Progress() as progress:
-                        buffer_task = progress.add_task(description="Checking on torrent...", total=None)
+                        buffer_task = progress.add_task(
+                            description="Checking on torrent...", total=None)
 
-                        while not download_info["size"]:  # Wait until torrent has started downloading
+                        # Wait until torrent has started downloading
+                        while not download_info["size"]:
                             time.sleep(0.5)
-                            download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
-                        
+                            download_info = qb.get_torrent_progress(
+                                torrent_hash=torrent_hash, login_cookies=login_cookies)
+
                         # Update total size once torrent starts downloading
                         progress.update(task_id=buffer_task,
                                         description=f" [green]Downloading to 100%...[/green]",
@@ -322,30 +349,32 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
                                         total=download_info["size"])
 
                         # We only wait for 10% completion before opening the file.
-                        while download_info["availability"] != -1:  # While we are not seeding
-                            download_info = qb.get_torrent_progress(torrent_hash=torrent_hash, login_cookies=login_cookies)
-                            progress.update(buffer_task, completed=download_info["downloaded"])
+                        # While we are not seeding
+                        while download_info["availability"] != -1:
+                            download_info = qb.get_torrent_progress(
+                                torrent_hash=torrent_hash, login_cookies=login_cookies)
+                            progress.update(
+                                buffer_task, completed=download_info["downloaded"])
                             time.sleep(0.5)
 
-
                 with console.status("[cyan bold]qbittorrent:[/cyan bold] Removing torrent..."):
-                    qb.remove_torrent(torrent_hash=torrent_hash, delete_files=delete_after_viewing, login_cookies=login_cookies)
+                    qb.remove_torrent(
+                        torrent_hash=torrent_hash, delete_files=delete_after_viewing, login_cookies=login_cookies)
 
-                console.print("[green]Seeding[/green] / [red]Leeching[/red] stopped!")
-                console.print(f"Files{' ' if delete_after_viewing else ' [green]not[/green] '}deleted!")
+                console.print(
+                    "[green]Seeding[/green] / [red]Leeching[/red] stopped!")
+                console.print(
+                    f"Files{' ' if delete_after_viewing else ' [green]not[/green] '}deleted!")
 
             console.print("[red]❤[/red] [cyan]Goodbye![/cyan] [red]❤[/red]")
             break
-
-
-
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()  # For command line args
 
-    parser.add_argument("-d", "--download-dir", 
+    parser.add_argument("-d", "--download-dir",
                         dest="download_dir",
                         help="Path of directory to download films to.")
     parser.add_argument("-v", "--vpn",
@@ -367,7 +396,7 @@ if __name__ == "__main__":
         download_dir = DOWNLOAD_DIR
     else:
         download_dir = args.download_dir
-    
+
     if not args.buffer_percent:
         buffer_percent = 0.05
     else:
