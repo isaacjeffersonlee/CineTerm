@@ -251,7 +251,7 @@ def display_live_title() -> None:
                   show_header=False, show_footer=False,
                   show_lines=False, show_edge=False)
         t.add_row(Panel(Align(renderable=title_str, align="center")))
-        t.add_row("[red]Ctrl-c[/red] to begin...")
+        t.add_row("[red]Ctrl-c[/red] to search for a movie...")
         return t
 
     with Live(generate_title_table(0), refresh_per_second=4) as live:
