@@ -14,7 +14,7 @@ import vlc
 import argparse
 import os
 from cineterm.config import ROOT_PATH, CACHE_PATH, LOG_PATH, DOWNLOAD_DIR, QB_USERNAME, QB_PASSWORD
-import cineterm.title as title
+import cineterm.title as title_printer
 import cineterm.selector as selector
 import cineterm.qbittorrent as qb
 import cineterm.yts as yts
@@ -59,6 +59,60 @@ def populate_results_table(search_results: list[dict]) -> Table:
     return results_table
 
 
+def print_movie_info(title: str, summary: str, rating: float,
+                       runtime: int, genres: list[str]) -> None:
+    console.print(Markdown(f"## {title}:"))
+    print("")
+    if not summary or summary == ' ':
+        summary = "[red]Sorry![/red] No summary available."
+
+    console.print(Align(renderable=Panel(
+        renderable=summary, width=50), align="center"))
+    print("")
+    console.print(
+        Align(renderable=f"Rating: {rating}/10.0", align="center"))
+    print("")
+    console.print(
+        Align(renderable=f"Runtime: {runtime} mins", align="center"))
+    print("")
+    console.print(Align(
+        renderable="Genres: " +
+        " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
+        align="center"))
+    print("")
+    console.print(Markdown("---"))
+    print("")
+    console.print(Align(
+        renderable=" ([red bold]s[/red bold])tream" +
+        " ([red bold]d[/red bold])ownload " +
+        "([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak " +
+        "([red bold]t[/red bold])railer ([red bold]q[/red bold])uit",
+        align="center"))
+
+
+def get_mode_choice() -> str:
+    return Prompt.ask(" [yellow]Enter action letter[/yellow]",
+                      show_choices=False,
+                      choices=['d', 'r', 's', 'S', 't', 'q'])
+
+
+def print_torrent_info(torrents: list[dict]) -> None:
+    torrent_title_str = title_printer.get_title_str(
+        small_str="Torrents", medium_str=title_printer.medium_torrent_str,
+        large_str=title_printer.large_torrent_str)
+    console.print(
+        Panel(Align(renderable=torrent_title_str, align="center")))
+    for idx, torrent in enumerate(torrents):
+        panel_str = ""
+        panel_str += f"[green]Seeds:[/green] {torrent['seeds']}\n"
+        panel_str += f"[red]Peers:[/red] {torrent['peers']}\n"
+        panel_str += f"Torrent Quality: [bold]{torrent['quality']}[/bold]\n"
+        panel_str += f"Torrent Size: [blue]{torrent['size']}[/blue]"
+        console.print(Align(Panel(
+            renderable=panel_str, title=f"Torrent [[red]{idx}[/red]]",
+            width=30), align="center"))
+
+
 def connect_vpn() -> None:
     """Activate expressvpn connection."""
     try:
@@ -98,7 +152,7 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
     yts_movies_df = yts.read_in_movies_df(CACHE_PATH)
 
-    title.display_live_title()
+    title_printer.display_live_title()
 
     console.print(Markdown("---"))
 
@@ -123,43 +177,16 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
         movie = r["data"]["movie"]
         movie_title = movie["title_long"]
-
-        # results_table = populate_results_table(movie)
-
-        console.print(Markdown(f"## {movie_title}:"))
-        print("")
         summary = movie["description_intro"]
         genres = movie["genres"]
         rating = movie["rating"]
         runtime = movie["runtime"]
-        if not summary or summary == ' ':
-            summary = "[red]Sorry![/red] No summary available."
 
-        console.print(Align(renderable=Panel(
-            renderable=summary, width=50), align="center"))
-        print("")
-        console.print(
-            Align(renderable=f"Rating: {rating}/10.0", align="center"))
-        print("")
-        console.print(
-            Align(renderable=f"Runtime: {runtime} mins", align="center"))
-        print("")
-        console.print(Align(
-            renderable="Genres: " +
-            " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
-            align="center"))
-        print("")
-        console.print(Markdown("---"))
-        print("")
-        console.print(Align(
-            renderable=" ([red bold]s[/red bold])tream" +
-            " ([red bold]d[/red bold])ownload " +
-            "([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak" +
-            "([red bold]t[/red bold])railer ([red bold]q[/red bold])uit",
-            align="center"))
-        mode_choice = Prompt.ask(" [yellow]Enter action letter[/yellow]",
-                                 show_choices=False,
-                                 choices=['d', 'r', 's', 'S', 't', 'q'])
+        print_movie_info(title=movie_title, summary=summary, genres=genres,
+                         rating=rating, runtime=runtime)
+
+        mode_choice = get_mode_choice()
+
         if mode_choice == 'q':
             break
 
@@ -180,60 +207,26 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
         elif mode_choice == 'S':
             os.system("clear")
             console.print(Markdown("---"))
-            console.print(Markdown(f"## Summary for {movie_title}:"))
-            print("")
-            summary = movie["description_intro"]
-            genres = movie["genres"]
-            rating = movie["rating"]
-            runtime = movie["runtime"]
-            if not summary or summary == ' ':
-                console.print("   [red]Sorry![/red] No summary available.")
-            else:
-                console.print(Align(renderable=Panel(
-                    renderable=summary, width=50), align="center"))
-                print("")
-                console.print(
-                    Align(renderable=f"Rating: {rating}/10.0", align="center"))
-                print("")
-                console.print(
-                    Align(renderable=f"Runtime: {runtime} mins", align="center"))
-                print("")
-                console.print(Align(renderable="Genres: " +
-                                    " | ".join([f"[blue]{genre}[/blue]"
-                                                for genre in genres]),
-                                    align="center"))
-                print("")
-                try:
-                    console.print("[red]Ctrl-c[/red] to stop voice.")
-                    subprocess.run(["espeak", "-v", speech_language, summary],
-                                   stdout=open("/dev/null", 'w'),
-                                   stderr=open(LOG_PATH, 'a'))
-                except Exception:
-                    pass
+            print_movie_info(title=movie_title, summary=summary, genres=genres,
+                             rating=rating, runtime=runtime)
+
+            try:
+                console.print("[red]Ctrl-c[/red] to stop voice.")
+                subprocess.run(["espeak", "-v", speech_language, summary],
+                               stdout=open("/dev/null", 'w'),
+                               stderr=open(LOG_PATH, 'a'))
+            except:
+                pass
 
             print("")
             os.system("clear")
             continue
 
         else:  # Either stream or download
+            torrents = movie["torrents"]
             os.system("clear")
             console.print(f"You have chosen: {movie_title}")
-            torrent_title_str = title.get_title_str(
-                small_str="Torrents", medium_str=title.medium_torrent_str, 
-                large_str=title.large_torrent_str)
-            console.print(
-                Panel(Align(renderable=torrent_title_str, align="center")))
-            torrents = movie["torrents"]
-            for idx, torrent in enumerate(torrents):
-                panel_str = ""
-                panel_str += f"[green]Seeds:[/green] {torrent['seeds']}\n"
-                panel_str += f"[red]Peers:[/red] {torrent['peers']}\n"
-                panel_str += f"Torrent Quality: [bold]{torrent['quality']}[/bold]\n"
-                panel_str += f"Torrent Size: [blue]{torrent['size']}[/blue]"
-                console.print(Align(Panel(
-                    renderable=panel_str, title=f"Torrent [[red]{idx}[/red]]",
-                    width=30), align="center"))
-
+            print_torrent_info(torrents)
             console.print(Markdown("---"))
             torrent_idx = IntPrompt.ask(f" [yellow]Choose a torrent number" + 
                                         " [[red]0-{len(torrents)-1}[/red]][/yellow]",
@@ -245,12 +238,12 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
             magnet_link = yts.parse_magnet_link(torrent_hash, torrent_url)
 
-            with console.status(f"Connecting to qbittorrent...", spinner=status_spinner):
+            with console.status("Connecting to qbittorrent...", spinner=status_spinner):
                 login_cookies = qb.login(logfile_path=LOG_PATH,
                                          qb_username=QB_USERNAME,
                                          qb_password=QB_PASSWORD)
 
-            with console.status(f"Adding torrent to qbittorrent..."):
+            with console.status("Adding torrent to qbittorrent..."):
                 qb.add_torrent(magnet_link=magnet_link,
                                movie_title=movie_title,
                                save_path=download_dir,
