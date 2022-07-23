@@ -1,6 +1,3 @@
-#!/bin/python3
-
-import json
 from rich.console import Console  # For pretty printing
 from rich.prompt import IntPrompt, Prompt, Confirm
 from rich.markdown import Markdown
@@ -16,24 +13,12 @@ from fuzzywuzzy import fuzz
 import vlc
 import argparse
 import os
-import sys
-LIB_PATH = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../cineterm"))
-ROOT_PATH = os.path.dirname(LIB_PATH)
-logfile_path = ROOT_PATH + "/logfile.log"
-sys.path.append(LIB_PATH)
-CACHE_PATH = f"{LIB_PATH}/cache/yts_movies_df.pkl"
-import title
-import selector
-import qbittorrent as qb
-import yts
+from cineterm.config import ROOT_PATH, CACHE_PATH, LOG_PATH, DOWNLOAD_DIR, QB_USERNAME, QB_PASSWORD
+import cineterm.title as title
+import cineterm.selector as selector
+import cineterm.qbittorrent as qb
+import cineterm.yts as yts
 
-# Todo List
-# TODO: Refactor
-# - Create functions from main loop code
-# - 
-# - Better Docstrings
-# TODO: Add random recommendation system
 
 # Rich setup for pretty printing
 status_spinner = "dots"
@@ -44,17 +29,8 @@ try:
     error_sound = vlc.MediaPlayer(f"{ROOT_PATH}/media/error_sound.mp3")
     torrent_added_sound = vlc.MediaPlayer(f"{ROOT_PATH}/media/yeah_boy.mp3")
     prof_sound = vlc.MediaPlayer(f"{ROOT_PATH}/media/watch_your_profanity.mp3")
-except:
+except Exception:
     pass
-
-with open(f"{ROOT_PATH}/config.json", 'r') as f:
-    config = json.load(f)
-
-# qbittorrent details
-QB_USERNAME = config["qb_username"]
-QB_PASSWORD = config["qb_password"]
-# Download dir
-DOWNLOAD_DIR = config["download_dir"]
 
 
 # For text to speech
@@ -90,9 +66,9 @@ def connect_vpn() -> None:
         console.print(f"Running {ROOT_PATH}/activate_vpn.sh")
         subprocess.run([f"{ROOT_PATH}/activate_vpn.sh"])
         # stdout=open("/dev/null", 'w'),
-        # stderr=open(logfile_path, 'a'))
+        # stderr=open(LOG_PATH, 'a'))
         # console.print("[green]Success:[/green] connected to vpn!")
-    except:
+    except Exception:
         console.print("[red]Warning:[/red] vpn failed to connect!")
 
 
@@ -116,7 +92,7 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
     if play_sounds:
         try:
             start_sound.play()
-        except:
+        except Exception:
             console.print("[gray]Error playing start sound effect![/gray]")
             error_sound.play()
 
@@ -150,7 +126,6 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
         # results_table = populate_results_table(movie)
 
-        # dynamic_print(small_str="ACTIONS", medium_str=medium_actions_str, large_str=large_actions_str)
         console.print(Markdown(f"## {movie_title}:"))
         print("")
         summary = movie["description_intro"]
@@ -169,14 +144,19 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
         console.print(
             Align(renderable=f"Runtime: {runtime} mins", align="center"))
         print("")
-        console.print(Align(renderable="Genres: " + " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
-                            align="center"))
+        console.print(Align(
+            renderable="Genres: " +
+            " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
+            align="center"))
         print("")
         console.print(Markdown("---"))
         print("")
-        # console.print(Align(results_table, align="center"))
         console.print(Align(
-            renderable=" ([red bold]s[/red bold])tream ([red bold]d[/red bold])ownload ([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak ([red bold]t[/red bold])railer ([red bold]q[/red bold])uit", align="center"))
+            renderable=" ([red bold]s[/red bold])tream" +
+            " ([red bold]d[/red bold])ownload " +
+            "([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak" +
+            "([red bold]t[/red bold])railer ([red bold]q[/red bold])uit",
+            align="center"))
         mode_choice = Prompt.ask(" [yellow]Enter action letter[/yellow]",
                                  show_choices=False,
                                  choices=['d', 'r', 's', 'S', 't', 'q'])
@@ -190,7 +170,8 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
         elif mode_choice == 't':
             console.print(
-                "[yellow]Caution:[/yellow] sometimes this will open a random youtube video if the trailer is [red]not found[/red].")
+                "[yellow]Caution:[/yellow] sometimes this will open a" + 
+                "random youtube video if the trailer is [red]not found[/red].")
             console.print(f"Opening trailer for {movie_title}...")
             trailer_url = "https://www.youtube.com/watch?v=" + \
                 movie["yt_trailer_code"]
@@ -217,15 +198,17 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
                 console.print(
                     Align(renderable=f"Runtime: {runtime} mins", align="center"))
                 print("")
-                console.print(Align(renderable="Genres: " + " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
+                console.print(Align(renderable="Genres: " +
+                                    " | ".join([f"[blue]{genre}[/blue]"
+                                                for genre in genres]),
                                     align="center"))
                 print("")
                 try:
                     console.print("[red]Ctrl-c[/red] to stop voice.")
                     subprocess.run(["espeak", "-v", speech_language, summary],
                                    stdout=open("/dev/null", 'w'),
-                                   stderr=open(logfile_path, 'a'))
-                except:
+                                   stderr=open(LOG_PATH, 'a'))
+                except Exception:
                     pass
 
             print("")
@@ -236,7 +219,8 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
             os.system("clear")
             console.print(f"You have chosen: {movie_title}")
             torrent_title_str = title.get_title_str(
-                small_str="Torrents", medium_str=title.medium_torrent_str, large_str=title.large_torrent_str)
+                small_str="Torrents", medium_str=title.medium_torrent_str, 
+                large_str=title.large_torrent_str)
             console.print(
                 Panel(Align(renderable=torrent_title_str, align="center")))
             torrents = movie["torrents"]
@@ -247,10 +231,12 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
                 panel_str += f"Torrent Quality: [bold]{torrent['quality']}[/bold]\n"
                 panel_str += f"Torrent Size: [blue]{torrent['size']}[/blue]"
                 console.print(Align(Panel(
-                    renderable=panel_str, title=f"Torrent [[red]{idx}[/red]]", width=30), align="center"))
+                    renderable=panel_str, title=f"Torrent [[red]{idx}[/red]]",
+                    width=30), align="center"))
 
             console.print(Markdown("---"))
-            torrent_idx = IntPrompt.ask(f" [yellow]Choose a torrent number [[red]0-{len(torrents)-1}[/red]][/yellow]",
+            torrent_idx = IntPrompt.ask(f" [yellow]Choose a torrent number" + 
+                                        " [[red]0-{len(torrents)-1}[/red]][/yellow]",
                                         show_choices=False,
                                         choices=[str(i) for i in range(len(torrents))])
 
@@ -260,7 +246,7 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
             magnet_link = yts.parse_magnet_link(torrent_hash, torrent_url)
 
             with console.status(f"Connecting to qbittorrent...", spinner=status_spinner):
-                login_cookies = qb.login(logfile_path=logfile_path,
+                login_cookies = qb.login(logfile_path=LOG_PATH,
                                          qb_username=QB_USERNAME,
                                          qb_password=QB_PASSWORD)
 
