@@ -1,13 +1,14 @@
 import time
 from rich.prompt import Confirm
 from rich.console import Console  # For pretty printing
+from rich.progress import Progress
 import pandas as pd
 import requests
 import aiohttp
 import asyncio
 import json
 import os
-from cineterm.config import LIB_PATH
+from cineterm.config import LIB_PATH, CACHE_PATH
 
 console = Console()
 
@@ -48,24 +49,35 @@ async def get_movies_py_page(page_num, limit, session):
     return r_json
 
 
-async def get_all_movies(limit: int = 20) -> list[dict]:
+async def get_all_movies(results_per_page: int = 20) -> list[dict]:
     """Get all movies in the yts database."""
     tasks = []
     page_num = 1  # Index starts from 1
     # Use a normal synchronous request to get the total movie count
     r = requests.get(url=BASE_URL+"list_movies.json",
-                     params={"limit": limit,
+                     params={"limit": results_per_page,
                              "query_term": '',
                              "page": page_num})
     movie_count = r.json()["data"]["movie_count"]
 
+
     async with aiohttp.ClientSession() as session:
         results_count = 0
-        while results_count < movie_count:
-            tasks.append(get_movies_py_page(page_num, limit, session))
-            results_count += limit
-            page_num += 1
-            console.print(f"Firing request => {results_count} / {movie_count}")
+        # total_pages = movie_count // results_per_page
+        with Progress() as progress:
+            update_task = progress.add_task(
+                description="[yellow] Sending requests to YTS...[/yellow]", total=None)
+            while results_count < movie_count:
+                # console.print(f"Firing request => {page_num} / {total_pages}")
+                # console.print(f"Movies Retrieved => {results_count} / {movie_count}")
+                tasks.append(get_movies_py_page(page_num, results_per_page, session))
+                results_count += results_per_page
+                page_num += 1
+                # Update total size once torrent starts downloading
+                progress.update(task_id=update_task,
+                                description=f" [green]Retrieving Movie Information...[/green]",
+                                completed=results_count,
+                                total=movie_count)
 
         with console.status("Gathering results, this may take a while..."):
             all_movies = await asyncio.gather(*tasks, return_exceptions=True)
@@ -79,12 +91,12 @@ def update_database(cache_path: str) -> None:
         "[yellow bold]Note:[/yellow bold] this could take quite a while depending on connection speed!")
     run = Confirm.ask("[yellow]Are you sure you want to continue?[/yellow]")
     if run:
-        start_time = time.time()
-        all_pages = asyncio.run(get_all_movies(50))
-        end_time = time.time()
+        start_time = time.perf_counter()
+        all_pages = asyncio.run(get_all_movies(results_per_page=50))
+        end_time = time.perf_counter()
         console.print("")
         console.rule(
-            title=f"[green]Finished in:[/green] {end_time-start_time}")
+            title=f"[green]Finished requesting database in:[/green] {end_time-start_time}")
         all_movies = []
         with console.status("Unpacking results..."):
             for r in all_pages:
@@ -139,5 +151,4 @@ def read_in_movies_df(cache_path: str) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    CACHE_PATH = f"{LIB_PATH}/yts_movies_df.pkl"
     update_database(CACHE_PATH)
