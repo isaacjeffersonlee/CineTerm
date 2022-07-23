@@ -215,7 +215,7 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
                 subprocess.run(["espeak", "-v", speech_language, summary],
                                stdout=open("/dev/null", 'w'),
                                stderr=open(LOG_PATH, 'a'))
-            except:
+            except KeyboardInterrupt:
                 pass
 
             print("")
