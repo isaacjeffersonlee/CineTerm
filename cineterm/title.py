@@ -2,6 +2,7 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.align import Align
 from rich.table import Table
+from rich.console import Console
 import os
 import time
 
@@ -226,6 +227,13 @@ def get_title_str(small_str: str, medium_str: str, large_str: str) -> str:
         return small_str
 
 
+def display_static_title(console: Console) -> None:
+    title_str = get_title_str(small_str="CineTerm",
+                              medium_str=medium_title_str,
+                              large_str=large_title_str)
+    console.print(Panel(Align(renderable=title_str, align="center")))
+
+
 def display_live_title() -> None:
 
     def generate_title_table(i: int) -> Table:
@@ -243,7 +251,7 @@ def display_live_title() -> None:
                   show_header=False, show_footer=False,
                   show_lines=False, show_edge=False)
         t.add_row(Panel(Align(renderable=title_str, align="center")))
-        t.add_row("[red]Ctrl-c[/red] to begin search...")
+        t.add_row("[red]Ctrl-c[/red] to begin...")
         return t
 
     with Live(generate_title_table(0), refresh_per_second=4) as live:
