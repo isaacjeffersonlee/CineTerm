@@ -1,5 +1,5 @@
 import sys
-from summary_mapper import summary_map
+from cineterm.summary_mapper import summary_map
 
 
 def print_summary_str(title: str, summary_map: dict[str, str]) -> None:

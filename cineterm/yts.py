@@ -7,9 +7,7 @@ import aiohttp
 import asyncio
 import json
 import os
-
-LIB_PATH = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../cineterm"))
+from cineterm.config import LIB_PATH
 
 console = Console()
 
