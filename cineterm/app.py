@@ -79,21 +79,18 @@ def print_movie_info(title: str, summary: str, rating: float,
         renderable="Genres: " +
         " | ".join([f"[blue]{genre}[/blue]" for genre in genres]),
         align="center"))
-    print("")
-    console.print(Markdown("---"))
-    print("")
+
+
+def get_mode_choice() -> str:
     console.print(Align(
         renderable=" ([red bold]s[/red bold])tream" +
         " ([red bold]d[/red bold])ownload " +
         "([red bold]r[/red bold])e-search ([red bold]S[/red bold])peak " +
-        "([red bold]t[/red bold])railer ([red bold]q[/red bold])uit",
-        align="center"))
-
-
-def get_mode_choice() -> str:
+        "([red bold]t[/red bold])railer ([red bold]u[/red bold])pdate" +
+        " ([red bold]q[/red bold])uit", align="center"))
     return Prompt.ask(" [yellow]Enter action letter[/yellow]",
                       show_choices=False,
-                      choices=['d', 'r', 's', 'S', 't', 'q'])
+                      choices=['d', 'r', 's', 'S', 't', 'u', 'q'])
 
 
 def print_torrent_info(torrents: list[dict]) -> None:
@@ -154,13 +151,26 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
     title_printer.display_live_title()
 
-    console.print(Markdown("---"))
-
-    os.system("clear")
-    r = selector.fzf_request_movie(yts_movies_df, console)
 
     while True:
+        # os.system("clear")
+        # title_printer.display_static_title(console)
+        # console.print(Markdown("---"))
+        # mode_choice = Prompt.ask(" ([red]s[/red])earch for a movie " + 
+        #                          "([red]u[/red])pdate movie database " + 
+        #                          "([red]q[/red])uit",
+        #                          choices=['s', 'u', 'q'], show_choices=False)
+        # if mode_choice == 'u':
+        #     yts.update_database(CACHE_PATH)
+        #     input("Press any key to return to start menu...")
+        #     continue
+
+        # if mode_choice == 'q':
+        #     break
+
+        r = selector.fzf_request_movie(yts_movies_df, console)
         os.system("clear")
+
         if not r:  # If the user exists the initial fuzzy search.
             break
         status = r["status"]
@@ -184,15 +194,20 @@ def main(download_dir: str, activate_vpn: bool, play_sounds: bool,
 
         print_movie_info(title=movie_title, summary=summary, genres=genres,
                          rating=rating, runtime=runtime)
-
+        print("")
+        console.print(Markdown("---"))
+        print("")
         mode_choice = get_mode_choice()
+
+        if mode_choice == 'u':
+            yts.update_database(CACHE_PATH)
+            input("Press any key to re-search...")
+            continue
 
         if mode_choice == 'q':
             break
 
         elif mode_choice == 'r':
-            console.print(Markdown("---"))
-            r = selector.fzf_request_movie(yts_movies_df, console)
             continue
 
         elif mode_choice == 't':
