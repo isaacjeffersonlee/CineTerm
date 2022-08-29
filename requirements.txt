@@ -1,0 +1,12 @@
+aiohttp
+fuzzywuzzy
+numpy
+pandas
+psutil
+pyfzf
+python_vlc
+requests
+rich
+setuptools
+python-Levenshtein
+wheel

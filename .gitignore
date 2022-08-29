@@ -1,0 +1,8 @@
+__pycache__*
+*.log
+credentials.json
+config.json
+*.pkl
+*.csv
+*.egg*
+cine_env/
