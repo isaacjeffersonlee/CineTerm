@@ -79,5 +79,5 @@ else
     echo ">>>>>>>>>>>>>>>>>>>>>> DONE! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
     echo "You should now be able to run with python -m cineterm.app --options"
     echo "Where --options are:"
-    python -m cineterm.app -h
+    python -m cineterm.cineterm_run -h
 fi
