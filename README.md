@@ -120,7 +120,7 @@ Once everything is installed, you can run the app with:
 cineterm (--args)
 ```
 
-Or alternatively, if installed in a virtual env, you something like:
+Or alternatively, if installed in a virtual env, you can add something like:
 ```shell
 alias cineterm='/home/isaac/.virtualenvs/cine_env/bin/python3 -m cineterm.app --vpn'
 ```
