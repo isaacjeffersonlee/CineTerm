@@ -135,7 +135,6 @@ optional arguments:
   -d DOWNLOAD_DIR, --download-dir DOWNLOAD_DIR
                         Path of directory to download films to.
   -v, --vpn             Call activate_vpn.sh on startup.
-  -s, --sounds          Play sound effects.
   -b BUFFER_PERCENT, --buffer-percent BUFFER_PERCENT
                         Percentage to download file before opening.
                         Recommended is 0.05
