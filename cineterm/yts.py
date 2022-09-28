@@ -39,7 +39,7 @@ def parse_magnet_link(torrent_hash: str, torrent_url: str) -> str:
     return magnet_link
 
 
-async def get_movies_py_page(page_num: int, limit: int, session: aiohttp.ClientSession):
+async def get_movies_py_page(page_num: int, limit: int, session: aiohttp.ClientSession) -> dict:
     r = await session.get(
         url=BASE_URL + "list_movies.json",
         params={"limit": limit, "query_term": "", "page": page_num},
